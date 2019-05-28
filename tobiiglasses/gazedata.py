@@ -77,6 +77,15 @@ class GazeData:
     GazeDirectionZ_Right = "Gaze Direction Right Z"
     GazePixelX = "Gaze Pixel X"
     GazePixelY = "Gaze Pixel Y"
+    PupilCenterX_Left = "Pupil Center Left X"
+    PupilCenterY_Left = "Pupil Center Left Y"
+    PupilCenterZ_Left = "Pupil Center Left Z"
+    PupilCenterX_Right = "Pupil Center Right X"
+    PupilCenterY_Right = "Pupil Center Right Y"
+    PupilCenterZ_Right = "Pupil Center Right Z"
+    PupilDiameter_Left = "Pupil Diameter Left"
+    PupilDiameter_Right = "Pupil Diameter Right"
+
 
     def __init__(self, segment):
         self.__gazedata__ = {}
@@ -152,6 +161,24 @@ class GazeData:
                 self.__gazedata__[GazeData.Vergence][ts] = math.acos( np.dot(self.__gd_left__[gidx], self.__gd_right__[gidx])/(np.linalg.norm(self.__gd_left__[gidx])*np.linalg.norm(self.__gd_right__[gidx])) )*180./math.pi
             except:
                 pass
+        elif isinstance(livedatajson_item, PupilCenter):
+            if livedatajson_item.eye.getValue() == "left":
+                self.__gazedata__[GazeData.PupilCenterX_Left][ts] = livedatajson_item.pc.getValue()[0]
+                self.__gazedata__[GazeData.PupilCenterY_Left][ts] = livedatajson_item.pc.getValue()[1]
+                self.__gazedata__[GazeData.PupilCenterZ_Left][ts] = livedatajson_item.pc.getValue()[2]
+                return
+            elif livedatajson_item.eye.getValue() == "right":
+                self.__gazedata__[GazeData.PupilCenterX_Right][ts] = livedatajson_item.pc.getValue()[0]
+                self.__gazedata__[GazeData.PupilCenterY_Right][ts] = livedatajson_item.pc.getValue()[1]
+                self.__gazedata__[GazeData.PupilCenterZ_Right][ts] = livedatajson_item.pc.getValue()[2]
+                return
+        elif isinstance(livedatajson_item, PupilDiameter):
+            if livedatajson_item.eye.getValue() == "left":
+                self.__gazedata__[GazeData.PupilDiameter_Left][ts] = livedatajson_item.pd.getValue()
+                return
+            elif livedatajson_item.eye.getValue() == "right":
+                self.__gazedata__[GazeData.PupilDiameter_Right][ts] = livedatajson_item.pd.getValue()
+                return
 
     def __decodeJSON__(self, json_item):
         if TobiiJSONProperties.PupilCenter.key in json_item:
@@ -211,6 +238,14 @@ class GazeData:
         self.__gazedata__[GazeData.GazeDirectionX_Right] = GazeItem(GazeData.GazeDirectionX_Right, np.dtype('float'))
         self.__gazedata__[GazeData.GazeDirectionY_Right] = GazeItem(GazeData.GazeDirectionY_Right, np.dtype('float'))
         self.__gazedata__[GazeData.GazeDirectionZ_Right] = GazeItem(GazeData.GazeDirectionZ_Right, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterX_Left] = GazeItem(GazeData.PupilCenterX_Left, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterY_Left] = GazeItem(GazeData.PupilCenterY_Left, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterZ_Left] = GazeItem(GazeData.PupilCenterZ_Left, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterX_Right] = GazeItem(GazeData.PupilCenterX_Right, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterY_Right] = GazeItem(GazeData.PupilCenterY_Right, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilCenterZ_Right] = GazeItem(GazeData.PupilCenterZ_Right, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilDiameter_Left] = GazeItem(GazeData.PupilDiameter_Left, np.dtype('float'))
+        self.__gazedata__[GazeData.PupilDiameter_Right] = GazeItem(GazeData.PupilDiameter_Right, np.dtype('float'))
 
     def getData(self):
         return self.__gazedata__.values

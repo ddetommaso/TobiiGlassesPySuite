@@ -68,6 +68,14 @@ class RawCSV(CSVFile):
         self.__headers__.append(GazeData.GazeDirectionX_Right)
         self.__headers__.append(GazeData.GazeDirectionY_Right)
         self.__headers__.append(GazeData.GazeDirectionZ_Right)
+        self.__headers__.append(GazeData.PupilCenterX_Left)
+        self.__headers__.append(GazeData.PupilCenterY_Left)
+        self.__headers__.append(GazeData.PupilCenterZ_Left)
+        self.__headers__.append(GazeData.PupilCenterX_Right)
+        self.__headers__.append(GazeData.PupilCenterY_Right)
+        self.__headers__.append(GazeData.PupilCenterZ_Right)
+        self.__headers__.append(GazeData.PupilDiameter_Left)
+        self.__headers__.append(GazeData.PupilDiameter_Right)
 
     def toCSV(self):
         self.__exportDataFrame__(self.__gazedata__.toDataFrame())
