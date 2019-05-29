@@ -16,7 +16,7 @@ setup(
     version='0.3',
     description='A Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
-    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.3.tar.gz',
+    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.4.tar.gz',
     install_requires=['tobiiglassesctrl'],
     author='Davide De Tommaso',
     author_email='ing.davidedetommaso@gmail.com',
