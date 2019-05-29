@@ -13,7 +13,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='tobiiglasses',
-    version='0.3',
+    version='0.4',
     description='A Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
     download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.4.tar.gz',
