@@ -118,12 +118,25 @@ class GazeData:
             tvalue = livedatajson_item.type.getValue()
             tag = livedatajson_item.tag.getValue()
             if tvalue != "JsonEvent":
+
                 if tvalue.startswith('#') and tvalue.endswith('#'):
                     var_name = tvalue[1:-1]
                     if not var_name in self.__experiment_vars__.keys():
                         self.__experiment_vars__[var_name] = SortedDict({})
                     self.__experiment_vars__[var_name][ts] = tag
-                self.__gazedata__[GazeData.LoggedEvents][ts] = tvalue
+
+                elif tvalue.startswith('@') and tvalue.endswith('@'):
+                    vars_list = eval(tvalue[1:-1])
+                    values_list = eval(tag)
+                    for i in range(0, len(vars_list)):
+                        var_name = vars_list[i]
+                        value = values_list[i]
+                        if not var_name in self.__experiment_vars__.keys():
+                            self.__experiment_vars__[var_name] = SortedDict({})
+                        self.__experiment_vars__[var_name][ts] = value
+                else:
+                    self.__gazedata__[GazeData.LoggedEvents][ts] = tvalue
+
             else:
                 self.__gazedata__[GazeData.Timestamp].pop(ts)
             return
