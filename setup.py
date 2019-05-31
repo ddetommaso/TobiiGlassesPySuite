@@ -13,11 +13,11 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='tobiiglasses',
-    version='0.5',
+    version='0.6',
     description='A Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
-    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.5.tar.gz',
-    install_requires=['tobiiglassesctrl>=2.2.1'],
+    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.6.tar.gz',
+    install_requires=['tobiiglassesctrl>=2.2.1', 'pandas', 'opencv-python', 'sortedcontainers==1.5.10'],
     author='Davide De Tommaso',
     author_email='ing.davidedetommaso@gmail.com',
     keywords=['eye-tracker','tobii','glasses', 'tobii pro glasses 2', 'tobii glasses', 'eye tracking'],
