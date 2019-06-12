@@ -24,7 +24,9 @@ import matplotlib as mpl
 from sklearn import mixture
 from sklearn.cluster import DBSCAN as DB
 
-class AOI_Model:
+from model import AOI_Model
+
+class AOI_ClusterModel(AOI_Model):
     COLORS_LIST = ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'magenta']
 
     def __init__(self, n_clusters=None, cluster_labels=[], sorted_key=None):
@@ -52,7 +54,7 @@ class AOI_Model:
     def __assignColorLabels__(self, labels):
         newlabels = []
         for l in labels:
-            newlabels.append(AOI_Model.COLORS_LIST[l])
+            newlabels.append(AOI_ClusterModel.COLORS_LIST[l])
         return newlabels
 
     def __assignsLabels__(self, means, labels, cluster_labels, sorted_key):
@@ -68,7 +70,7 @@ class AOI_Model:
         return new_labels
 
     def __color_iter__(self):
-        return itertools.cycle(AOI_Model.COLORS_LIST)
+        return itertools.cycle(AOI_ClusterModel.COLORS_LIST)
 
     def __draw_ellipse__(self, mean, covar, color, cplot):
         v, w = linalg.eigh(covar)
@@ -81,7 +83,7 @@ class AOI_Model:
         ell.set_alpha(0.5)
         cplot.add_artist(ell)
 
-    def __fit__(self, X):
+    def __clustering__(self, X):
         """
         to assign:
         self.__X__, self.__n_clusters__, self.__labels__, self.__means__, self.__covariances__
@@ -108,7 +110,7 @@ class AOI_Model:
         self.__initvars__()
         ts_list, x, y = gaze_events.getFixationsAsNumpy(ts_filter)
         self.__X__ = np.column_stack((x,y))
-        (self.__model__,self.__means__, self.__covariances__, self.__labels__) = self.__fit__(self.__X__)
+        (self.__model__,self.__means__, self.__covariances__, self.__labels__) = self.__clustering__(self.__X__)
         #self.__scores__ = self.__model__.score_samples(self.__X__)
         if not self.__sorted_key__ is None:
             self.__labels__ = self.__assignsLabels__(self.__means__, self.__labels__, self.__cluster_labels__, self.__sorted_key__)
@@ -121,17 +123,7 @@ class AOI_Model:
     def saveModel(self, filename):
         joblib.dump(self.__model__, filename)
 
-    def savePlot(self, title='no title', filename='plot.pdf', background_image=None, width=1920, height=1080):
-        p = self.__plot__(title, background_image, width, height)
-        p.savefig(filename, format='pdf')
-        p.gca().clear()
-
-    def showPlot(self, title='no title', background_image=None, width=1920, height=1080):
-        p = self.__plot__(title, background_image, width, height)
-        p.show()
-        p.gca().clear()
-
-    def __plot__(self, title, background_image=None, width=1920, height=1080):
+    def plot(self, title, background_image=None, width=1920, height=1080):
         cplot = plt.gca()
         img = None
         if not background_image is None:
@@ -155,26 +147,26 @@ class AOI_Model:
         return plt
 
 
-class GaussianMixture(AOI_Model):
+class GaussianMixture(AOI_ClusterModel):
 
     def __init__(self, n_clusters, cluster_labels=[], sorted_key=None):
-        AOI_Model.__init__(self, n_clusters, cluster_labels, sorted_key)
+        AOI_ClusterModel.__init__(self, n_clusters, cluster_labels, sorted_key)
 
-    def __fit__(self, X):
+    def __clustering__(self, X):
         model = mixture.GaussianMixture(n_components=self.__n_clusters__, covariance_type='full').fit(X)
         labels = model.predict(X)
         proba = model.predict_proba(X)
         return (model, model.means_, model.covariances_, labels)
 
 
-class DBSCAN(AOI_Model):
+class DBSCAN(AOI_ClusterModel):
 
     def __init__(self, eps, min_samples):
-        AOI_Model.__init__(self)
+        AOI_ClusterModel.__init__(self)
         self.__eps__ = eps
         self.__min_samples__ = min_samples
 
-    def __fit__(self, X):
+    def __clustering__(self, X):
         model = DB(eps=self.__eps__, min_samples=self.__min_samples__).fit(X)
         core_samples_mask = np.zeros_like(model.labels_, dtype=bool)
         core_samples_mask[model.core_sample_indices_] = True
