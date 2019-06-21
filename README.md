@@ -11,8 +11,13 @@ GNU/Linux, Windows OS, OSX
 
 
 ```
-pip install tobiiglassesctrl
+pip install tobiiglasses
 ```
+
+# Getting started
+
+Please visit the wiki.
+
 
 # Citation
 
