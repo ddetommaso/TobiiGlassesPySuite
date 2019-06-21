@@ -2,6 +2,10 @@
 The TobiiGlassesPySuite is an open-source Python toolkit for exploiting the capabilities of the Tobii Pro Glasses 2 in cross-
 platform experimental studies.
 
+# Compatibility
+
+Python 2.x and Python 3.x
+GNU/Linux, Windows OS, OSX
 
 # Citation
 
