@@ -5,7 +5,7 @@ The TobiiGlassesPySuite is an open-source Python toolkit for exploiting the capa
 
 Python 2.x and Python 3.x
 
-GNU/Linux, Windows OS, OSX
+GNU/Linux, MacOS, Windows OS
 
 # Installing
 
