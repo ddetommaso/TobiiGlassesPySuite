@@ -17,13 +17,15 @@ setup(
     description='A Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
     download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.6.tar.gz',
-    install_requires=['tobiiglassesctrl>=2.2.1', 'pandas', 'opencv-python', 'sortedcontainers==1.5.10'],
+    install_requires=['tobiiglassesctrl>=2.2.3', 'tornado', 'nose', 'pandas', 'opencv-python', 'sortedcontainers==1.5.10'],
     author='Davide De Tommaso',
     author_email='ing.davidedetommaso@gmail.com',
     keywords=['eye-tracker','tobii','glasses', 'tobii pro glasses 2', 'tobii glasses', 'eye tracking'],
     packages=find_packages(exclude=['examples*']),
     classifiers = [
                 'Programming Language :: Python :: 2.7',
-                'Programming Language :: Python :: 3.5'
+                'Programming Language :: Python :: 3.5',
+                'Programming Language :: Python :: 3.6',
+                'Programming Language :: Python :: 3.7',
     ],
 )
