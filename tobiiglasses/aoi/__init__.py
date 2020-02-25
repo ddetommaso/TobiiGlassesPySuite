@@ -1,1 +1,1 @@
-__all__ = ["clustering", "surf"]
+__all__ = ["clustering", "dnn", "heatmaps", "surf"]

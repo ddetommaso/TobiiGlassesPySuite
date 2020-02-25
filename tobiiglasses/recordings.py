@@ -25,6 +25,7 @@ from tobiiglasses.entities import TobiiRecording, TobiiSegment
 from tobiiglasses.gazedata import GazeData
 from tobiiglasses.events import GazeEvents
 from tobiiglasses.exporter import RawCSV, ExtendedRawCSV
+from tobiiglasses.video import VideoFramesAndMappedGaze, VideoAndGaze
 
 class Recording:
 
@@ -64,28 +65,82 @@ class Recording:
     def __loadSegmentIDs__(self):
         self.__segment_ids__.extend(range(1, self.__recording__.getSegmentsN() + 1))
 
+    def exportFull(self, fixation_filter, filepath=None, filename='output.avi', segment_id=1, fps=25.0, width=1920, height=1080, aoi_models=[]):
+        fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
+        if filepath is None:
+            filepath = "."
+        logging.info('Exporting video with mapped fixations in file %s in folder %s' % (filename, filepath))
+        data = self.getGazeData(segment_id)
+        f = self.__recording__.getSegment(segment_id).getVideoFilename()
+        cap = cv2.VideoCapture(f)
+        framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(filename,fourcc, fps, (width,height))
+        for frame, x, y, ts in framesAndGaze:
+            (fx, fy, duration) = fixations.getClosestFixation(ts)
+            for model in aoi_models:
+                model.apply(frame, ts, fx, fy, fixations)
+                model.drawAOIsBox(frame, ts)
+
+            if fx>0 and fy>0:
+                color = (0,0,255)
+                for model in aoi_models:
+                    aoi_id = model.getAOI(ts, fx, fy)
+                    if not aoi_id is None:
+                        color = (0,255,0)
+                        cv2.putText(frame, aoi_id, (fx, fy), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.circle(frame,(fx,fy), 30, color , 2)
+            out.write(frame)
+        cap.release()
+        model.exportHeatmap()
+        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, 'dave', 'Fixations')
+        fixations.exportCSV(filepath, filename, ts_filter=None)
+
+
+
     def exportCSV_ExtendedRawData(self, filepath=None, filename=None, segment_id=None):
         self.__exportData_CSV__(filepath, filename, 'eRaw', segment_id, ExtendedRawCSV)
 
-    def exportCSV_Fixations(self, fixation_filter, filepath=None, filename=None, ts_filter=None, segment_id=None, aoi_model=None, aoi_plot=None):
-        fixations = self.getFixations(fixation_filter, ts_filter, segment_id, aoi_model)
+    def exportCSV_Fixations(self, fixation_filter, filepath=None, filename=None, ts_filter=None, segment_id=None):
+        logging.info('Exporting fixations on %s' % filepath)
+        fixations = self.getFixations(fixation_filter, ts_filter, segment_id)
         (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, filename, 'Fixations')
         fixations.exportCSV(filepath, filename, ts_filter=ts_filter)
-        if not aoi_model is None and aoi_plot is True:
-            (filepath, filename) = self.__getFileParams__('pdf', segment_id, filepath, None, 'AOIs')
-            aoi_model.savePlot(title=filename, filename=os.path.join(filepath, filename))
+        return fixations
 
     def exportCSV_RawData(self, filepath=None, filename=None, segment_id=1):
         self.__exportData_CSV__(filepath, filename, 'Raw', segment_id, RawCSV)
 
-    def getFixations(self, fixation_filter, ts_filter=None, segment_id=None, aoi_model=None):
+    def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, fps=25.0, width=1920, height=1080, aoi_dnn_models=[]):
+        logging.info('Exporting video with mapped gaze in file %s in folder %s' % (filename, filepath))
+        data = self.getGazeData(segment_id)
+        f = self.__recording__.getSegment(segment_id).getVideoFilename()
+        cap = cv2.VideoCapture(f)
+        framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(filename,fourcc, fps, (width,height))
+        for frame, x, y, ts in framesAndGaze:
+            for model in aoi_dnn_models:
+                model.apply(frame, ts, x, y)
+                model.drawAOIsBox(frame, ts)
+
+            if x>0 and y>0:
+                color = (0,0,255)
+                aoi_id = model.getAOI(ts, x, y)
+                if not aoi_id is None:
+                    color = (0,255,0)
+                    cv2.putText(frame, aoi_id, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.circle(frame,(x,y), 30, color , 2)
+            out.write(frame)
+        cap.release()
+        model.exportHeatmap()
+
+    def getFixations(self, fixation_filter, ts_filter=None, segment_id=None):
         segment_ids = self.__getSegmentIDs__(segment_id)
         for s_id in segment_ids:
             gaze_data = self.getGazeData(s_id)
             gaze_events = self.getGazeEvents(s_id)
-            gaze_events.filterFixations(fixation_filter, gaze_data.toDataFrame(), ts_filter, aoi_model)
-            if not aoi_model is None:
-                aoi_model.fit(gaze_events, ts_filter)
+            gaze_events.filterFixations(fixation_filter, gaze_data.toDataFrame(), ts_filter)
         return gaze_events
 
     def getGazeData(self, segment_id=1):
@@ -107,60 +162,27 @@ class Recording:
         return self.__recording__.getParticipant().getName()
 
     def replay(self, segment_id, fps=25):
+        logging.info('Replaying video with mapped gaze...')
         data = self.getGazeData(segment_id)
-        df = data.toDataFrame()
-        vts = data.getVTS()
-        vts_list = vts.keys()
-        frame_duration = int(1000/fps)
-        current_time = vts_list[0]
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
-        if (cap.isOpened() == False):
-            print("Error opening video stream or file")
-        i = 0
-        while(cap.isOpened()):
-            ret, frame = cap.read()
-            if ret == True:
-                if current_time > vts_list[i]:
-                    i+=1
-                delay = int(vts[vts_list[i]])
-                T = df.index[df.index.get_loc(current_time+i, method='nearest')]
-                x = df.at[T, GazeData.GazePixelX]
-                y = df.at[T, GazeData.GazePixelY]
-                if x>0 and y>0:
-                    cv2.circle(frame,(int(x),int(y)), 30, (0,0,255), 2)
-                cv2.imshow('Frame',frame)
-                if cv2.waitKey(25) & 0xFF == ord('q'):
-                    break
-            else:
+        framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
+        for frame, x, y, ts in framesAndGaze:
+            if x>0 and y>0:
+                cv2.circle(frame,(int(x),int(y)), 30, (0,0,255), 2)
+            cv2.imshow('Frame',frame)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-            current_time+=frame_duration
         cap.release()
         cv2.destroyAllWindows()
 
     def saveVideoSnapshot(self, filename, ts, segment_id, fps=25):
-        data = self.getGazeData(segment_id)
-        df = data.toDataFrame()
-        vts = data.getVTS()
-        vts_list = vts.keys()
-        frame_duration = int(1000/fps)
-        current_time = vts_list[0]
+        logging.info('Saving snapshot from video recording in %s ' % filename)
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
-        if (cap.isOpened() == False):
-            print("Error opening video stream or file")
-        i = 0
-        while(cap.isOpened()):
-            ret, frame = cap.read()
-            if ret == True:
-                if current_time > vts_list[i]:
-                    i+=1
-                delay = int(vts[vts_list[i]])
-                T = df.index[df.index.get_loc(current_time+i, method='nearest')]
-                x = df.at[T, GazeData.GazePixelX]
-                y = df.at[T, GazeData.GazePixelY]
-                if T > ts:
-                    cv2.imwrite(filename,frame)
-                    break
-            current_time+=frame_duration
+        framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
+        for frame, x, y, _ts in framesAndGaze:
+            if _ts > ts:
+                cv2.imwrite(filename,frame)
+                break
         cap.release()

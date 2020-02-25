@@ -18,6 +18,7 @@ import numpy as np
 import tobiiglasses
 import logging
 import os
+import bisect
 from sortedcontainers import SortedList, SortedDict
 from tobiiglasses.gazedata import GazeItem, GazeData
 from tobiiglasses.filters.df import TimestampFilter
@@ -33,12 +34,11 @@ class GazeEvents:
     Fixation_X = "Fixation X"
     Fixation_Y = "Fixation Y"
     AOI = "AOI"
-    AOI_Distance = "AOI Distance"
+    AOI_Score = "AOI Score"
     Saccade_Start_X = "Saccade Start X"
     Saccade_Start_Y = "Saccade Start Y"
     Saccade_End_X = "Saccade End X"
     Saccade_End_Y = "Saccade End Y"
-
     InputFixationFilterX = GazeData.GazePixelX
     InputFixationFilterY = GazeData.GazePixelY
 
@@ -48,6 +48,8 @@ class GazeEvents:
         self.__fixation_index__ = 0
         self.__saccade_index__ = 0
         self.__ts_processed__ = []
+        self.__fixations__ = SortedDict({})
+        self.__saccades__ = {}
 
     def __getitem__(self, key):
         return self.__events__[key]
@@ -68,19 +70,20 @@ class GazeEvents:
         self.__events__[GazeEvents.EventIndex] = GazeItem(GazeEvents.EventIndex, np.dtype('u4'))
         self.__events__[GazeEvents.EventDuration] = GazeItem(GazeEvents.EventDuration, np.dtype('u4'))
         self.__events__[GazeEvents.AOI] = GazeItem(GazeEvents.AOI, np.dtype(object))
-        self.__events__[GazeEvents.AOI_Distance] = GazeItem(GazeEvents.AOI_Distance, np.dtype('f2'))
+        self.__events__[GazeEvents.AOI_Score] = GazeItem(GazeEvents.AOI_Score, np.dtype('f2'))
         self.__events__[GazeEvents.Saccade_Start_X] = GazeItem(GazeEvents.Saccade_Start_X, np.dtype('f2'))
         self.__events__[GazeEvents.Saccade_Start_Y] = GazeItem(GazeEvents.Saccade_Start_Y, np.dtype('f2'))
         self.__events__[GazeEvents.Saccade_End_X] = GazeItem(GazeEvents.Saccade_End_X, np.dtype('f2'))
         self.__events__[GazeEvents.Saccade_End_Y] = GazeItem(GazeEvents.Saccade_End_Y, np.dtype('f2'))
 
-    def addFixation(self, ts, index, duration, fixation_x, fixation_y, aoi=None):
+    def addFixation(self, ts, index, duration, fixation_x, fixation_y):
         self.__events__[GazeEvents.Timestamp][ts] = ts
         self.__events__[GazeEvents.GazeType][ts] = "Fixation"
         self.__events__[GazeEvents.EventIndex][ts] = index
         self.__events__[GazeEvents.EventDuration][ts] = duration
         self.__events__[GazeEvents.Fixation_X][ts] = fixation_x
         self.__events__[GazeEvents.Fixation_Y][ts] = fixation_y
+        self.__fixations__[ts] = (fixation_x, fixation_y, duration)
 
     def addLoggedEvent(self, ts, logged_event):
         self.__events__[GazeEvents.Timestamp][ts] = ts
@@ -95,6 +98,7 @@ class GazeEvents:
         self.__events__[GazeEvents.Saccade_Start_Y][ts] = saccade_start_y
         self.__events__[GazeEvents.Saccade_End_X][ts] = saccade_end_x
         self.__events__[GazeEvents.Saccade_End_Y][ts] = saccade_end_y
+        self.__saccades__ = (saccade_start_x, saccade_start_y, saccade_end_x, saccade_end_y, duration)
 
     def exportCSV(self, filepath, filename, ts_filter=None):
         fixations_df = self.toDataFrame(ts_filter).dropna(subset=[GazeEvents.Fixation_X, GazeEvents.Fixation_Y])
@@ -106,7 +110,7 @@ class GazeEvents:
         path = os.path.join(filepath, filename)
         self.toDataFrame(ts_filter).dropna(subset=[GazeEvents.Fixation_X, GazeEvents.Fixation_Y]).to_pickle(path)
 
-    def filterFixations(self, fixation_filter, gazedata_df, ts_filter=None, aoi_model=None):
+    def filterFixations(self, fixation_filter, gazedata_df, ts_filter=None):
         df, ts_list = self.__getFilteredGazeData__(gazedata_df, ts_filter)
         if not df.empty:
             x = pd.Series(df[GazeEvents.InputFixationFilterX])
@@ -117,6 +121,15 @@ class GazeEvents:
     def getFixations(self, ts_filter=None):
         df = self.toDataFrame(ts_filter)
         return df.loc[df[GazeEvents.GazeType] == 'Fixation']
+
+    def getClosestFixation(self, ts):
+        ts_list = list(self.__fixations__.keys())
+        ts_index = bisect.bisect_left(ts_list, ts)
+        if ts_index == 0:
+            ts_closest = ts_list[ts_index]
+        else:
+            ts_closest = ts_list[ts_index-1]
+        return self.__fixations__[ts_closest]
 
     def getSaccades(self, ts_filter=None):
         df = self.toDataFrame(ts_filter)
@@ -132,9 +145,9 @@ class GazeEvents:
     def getTimestamps(self):
         return list(self.__events__[GazeEvents.Timestamp].values())
 
-    def setAOI(self, ts, aoi_label, aoi_distance):
+    def setAOI(self, ts, aoi_label, aoi_score):
         self.__events__[GazeEvents.AOI][ts] = aoi_label
-        self.__events__[GazeEvents.AOI_Distance][ts] = aoi_distance
+        self.__events__[GazeEvents.AOI_Score][ts] = aoi_score
 
     def toDataFrame(self, ts_filter=None):
         table = {}

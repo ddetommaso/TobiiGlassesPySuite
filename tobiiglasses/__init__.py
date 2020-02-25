@@ -7,4 +7,5 @@ __all__ = [ "entities",
             "metrics",
             "recordings",
             "segments",
-            "utils"]
+            "utils",
+            "video"]

@@ -96,7 +96,7 @@ class FixationsCSV(CSVFile):
         self.__headers__.append(TG.events.GazeEvents.Fixation_Y)
         self.__headers__.append(TG.events.GazeEvents.EventDuration)
         self.__headers__.append(TG.events.GazeEvents.AOI)
-        self.__headers__.append(TG.events.GazeEvents.AOI_Distance)
+        self.__headers__.append(TG.events.GazeEvents.AOI_Score)
         self.__fixations_df__ = fixations_df
 
     def toCSV(self):
