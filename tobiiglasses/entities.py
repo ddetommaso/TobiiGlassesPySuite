@@ -16,6 +16,7 @@
 import datetime
 import logging
 import os
+import cv2
 import tobiiglasses.utils as utils
 
 TOBII_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S+%f'
@@ -176,12 +177,25 @@ class TobiiSegment:
         res = utils.load_json_from_file(segment_path, TobiiSegment.segment_filename)
         if res != None:
             self.__parse_json_seg__(res)
+            cap = cv2.VideoCapture(self.getVideoFilename())
+            self.__FRAME_WIDTH__ = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.__FRAME_HEIGHT__ = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.__FRAME_FPS__ = int(cap.get(cv2.CAP_PROP_FPS))
 
     def __parse_json_seg__(self, item):
         self.__seg_length_us__ = int(item["seg_length_us"])
         self.__seg_calibrated__ = bool(item["seg_calibrated"])
         self.__seg_t_start__ = datetime.datetime.strptime(item["seg_t_start"], TOBII_DATETIME_FORMAT)
         self.__seg_t_stop__ = datetime.datetime.strptime(item["seg_t_stop"], TOBII_DATETIME_FORMAT)
+
+    def getFrameHeight(self):
+        return self.__FRAME_HEIGHT__
+
+    def getFrameWidth(self):
+        return self.__FRAME_WIDTH__
+
+    def getFrameFPS(self):
+        return self.__FRAME_FPS__
 
     def getId(self):
         return self.__segment_id__

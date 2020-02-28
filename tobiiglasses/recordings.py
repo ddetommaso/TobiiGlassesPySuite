@@ -65,12 +65,15 @@ class Recording:
     def __loadSegmentIDs__(self):
         self.__segment_ids__.extend(range(1, self.__recording__.getSegmentsN() + 1))
 
-    def exportFull(self, fixation_filter, filepath=None, filename='output.avi', segment_id=1, fps=25.0, width=1920, height=1080, aoi_models=[]):
+    def exportFull(self, fixation_filter, filepath=None, filename='output.avi', segment_id=1, aoi_models=[]):
         fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
         if filepath is None:
             filepath = "."
         logging.info('Exporting video with mapped fixations in file %s in folder %s' % (filename, filepath))
         data = self.getGazeData(segment_id)
+        fps = data.getFrameFPS()
+        width = data.getFrameWidth()
+        height = data.getFrameHeight()
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
@@ -111,9 +114,12 @@ class Recording:
     def exportCSV_RawData(self, filepath=None, filename=None, segment_id=1):
         self.__exportData_CSV__(filepath, filename, 'Raw', segment_id, RawCSV)
 
-    def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, fps=25.0, width=1920, height=1080, aoi_dnn_models=[]):
+    def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, aoi_dnn_models=[]):
         logging.info('Exporting video with mapped gaze in file %s in folder %s' % (filename, filepath))
         data = self.getGazeData(segment_id)
+        fps = data.getFrameFPS()
+        width = data.getFrameWidth()
+        height = data.getFrameHeight()
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
@@ -161,9 +167,12 @@ class Recording:
     def getParticipantName(self):
         return self.__recording__.getParticipant().getName()
 
-    def replay(self, segment_id, fps=25):
+    def replay(self, segment_id):
         logging.info('Replaying video with mapped gaze...')
         data = self.getGazeData(segment_id)
+        fps = data.getFrameFPS()
+        width = data.getFrameWidth()
+        height = data.getFrameHeight()
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
@@ -176,9 +185,11 @@ class Recording:
         cap.release()
         cv2.destroyAllWindows()
 
-    def saveVideoSnapshot(self, filename, ts, segment_id, fps=25):
+    def saveVideoSnapshot(self, filename, ts, segment_id):
         logging.info('Saving snapshot from video recording in %s ' % filename)
-        f = self.__recording__.getSegment(segment_id).getVideoFilename()
+        segment = self.__recording__.getSegment(segment_id)
+        fps = segment.getFrameFPS()
+        f = segment.getVideoFilename()
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
         for frame, x, y, _ts in framesAndGaze:

@@ -123,7 +123,8 @@ class AOI_ClusterModel(AOI_Model):
     def saveModel(self, filename):
         joblib.dump(self.__model__, filename)
 
-    def plot(self, title, background_image=None, width=1920, height=1080):
+    #def plot(self, title, background_image=None, width=1920, height=1080):
+    def plot(self, title, width, height, background_image=None): #won't work until fix
         cplot = plt.gca()
         img = None
         if not background_image is None:

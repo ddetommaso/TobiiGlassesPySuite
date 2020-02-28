@@ -97,6 +97,9 @@ class GazeData:
         self.__pa_name__ = None
         self.__pr_name__ = None
         self.__segment__ = segment
+        self.__FRAME_HEIGHT__ = segment.getFrameHeight()
+        self.__FRAME_WIDTH__ = segment.getFrameWidth()
+        self.__FRAME_FPS__ = segment.getFrameFPS()
         self.__vts__ = SortedDict({})
         self.__init_datatypes__()
         self.__importGazeData__(segment)
@@ -146,8 +149,8 @@ class GazeData:
         if isinstance(livedatajson_item, GazePosition):
             self.__gazedata__[GazeData.GazePositionX][ts] = livedatajson_item.gp.getValue()[0]
             self.__gazedata__[GazeData.GazePositionY][ts] = livedatajson_item.gp.getValue()[1]
-            self.__gazedata__[GazeData.GazePixelX][ts] = int(1920*self.__gazedata__[GazeData.GazePositionX][ts])
-            self.__gazedata__[GazeData.GazePixelY][ts] = int(1080*self.__gazedata__[GazeData.GazePositionY][ts])
+            self.__gazedata__[GazeData.GazePixelX][ts] = int(self.__FRAME_WIDTH__*self.__gazedata__[GazeData.GazePositionX][ts])
+            self.__gazedata__[GazeData.GazePixelY][ts] = int(self.__FRAME_HEIGHT__*self.__gazedata__[GazeData.GazePositionY][ts])
             return
         elif isinstance(livedatajson_item, GazePosition3d):
             self.__gazedata__[GazeData.Gaze3DPositionX][ts] = livedatajson_item.gp3.getValue()[0]
@@ -265,6 +268,15 @@ class GazeData:
 
     def getExpVarsHeaders(self):
         return self.__experiment_vars_headers__
+
+    def getFrameHeight(self):
+        return self.__FRAME_HEIGHT__
+
+    def getFrameWidth(self):
+        return self.__FRAME_WIDTH__
+
+    def getFrameFPS(self):
+        return self.__FRAME_FPS__
 
     def getLoggedEvents(self):
         return self.__gazedata__[GazeData.LoggedEvents].getData()

@@ -25,7 +25,7 @@ class VideoAndGaze:
 
 class VideoFramesAndMappedGaze:
 
-    def __init__(self, gazedata, videoCapture, fps=25):
+    def __init__(self, gazedata, videoCapture, fps):
         self.__cap__ = videoCapture
         if (self.__cap__.isOpened() == False):
             print("Error opening video stream or file")
