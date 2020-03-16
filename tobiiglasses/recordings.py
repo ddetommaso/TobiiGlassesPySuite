@@ -27,6 +27,8 @@ from tobiiglasses.events import GazeEvents
 from tobiiglasses.exporter import RawCSV, ExtendedRawCSV
 from tobiiglasses.video import VideoFramesAndMappedGaze, VideoAndGaze
 
+import cv2.aruco as aruco
+
 class Recording:
 
     def __init__(self, root_dir, project_id, recording_id):
@@ -178,7 +180,7 @@ class Recording:
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
         for frame, x, y, ts in framesAndGaze:
             if x>0 and y>0:
-                cv2.circle(frame,(int(x),int(y)), 30, (0,0,255), 2)
+                cv2.circle(frame,(int(x),int(y)), 60, (0,0,255), 2)
             cv2.imshow('Frame',frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break

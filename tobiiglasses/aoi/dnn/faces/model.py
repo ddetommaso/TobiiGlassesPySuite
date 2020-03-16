@@ -131,7 +131,7 @@ class FaceLandmarksDetector:
 class AOI_Face_Model(AOI):
 
     def __init__(self):
-        AOI.__init__(self, 'face', FILENAME_FACE_LANDMARKS, FACE_FEATURES_POINTS)
+        AOI.__init__(self)
         self.__detector__ = FaceLandmarksDetector(FILENAME_SHAPE_PREDICTOR)
 
     def getDetectedItems(self, opencvMat):
@@ -145,11 +145,11 @@ class AOI_Face_Model(AOI):
                                                  [face.landmarks['jaw'][9][0], face.landmarks['jaw'][9][1]],
                                                  [face.landmarks['left_eyebrow'][4][0], face.landmarks['left_eyebrow'][4][1]]
                                                 ])
+            """
             landmarks = []
             for name in face.landmarks.keys():
                 for p in face.landmarks[name]:
                     landmarks.append( [p[0], p[1]])
-
-            AOI_Items.append( AOI_Item(self.__label__ + '_' + str(i), detected_features_points, landmarks, 100.0) )
-
+            """
+            AOI_Items.append( AOI_Item('face_' + str(i), detected_features_points, FILENAME_FACE_LANDMARKS, FACE_FEATURES_POINTS) )
         return AOI_Items

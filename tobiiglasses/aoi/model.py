@@ -20,35 +20,41 @@ from tobiiglasses.aoi.heatmaps import Heatmap
 
 class AOI_Item:
 
-    def __init__(self, aoi_id, detected_features_points, landmarks, aoi_score):
+    def __init__(self, aoi_id, detected_features_points, snapshot_filename, features_points,landmarks=[], aoi_score=100):
         self.aoi_id = aoi_id
         self.detected_features_points = detected_features_points
+        self.snapshot_filename = snapshot_filename
+        self.snapshot = cv2.imread(snapshot_filename)
+        self.features_points = features_points
         self.landmarks = landmarks
         self.aoi_score = aoi_score
 
 
 class AOI:
 
-    def __init__(self, label, snapshot_filename, features_points):
-        self.__label__ = label
-        self.__snapshot_filename__ = snapshot_filename
-        self.__snapshot__ = cv2.imread(snapshot_filename)
+    def __init__(self):
         self.__aoi_regions__ = {}
         self.__aoi_hits__ = {}
-        self.__features_points__ = features_points
+        self.__aoi_items__ = {}
 
     def apply(self, opencvMat, ts, gaze_x, gaze_y, gaze_events):
         for item in self.getDetectedItems(opencvMat):
             detected_features_points = item.detected_features_points
             aoi_id = item.aoi_id
+            if not aoi_id in self.__aoi_items__.keys():
+                self.__aoi_items__[aoi_id] = item
             if not aoi_id in self.__aoi_regions__.keys():
                 self.__aoi_regions__[aoi_id] = {}
                 self.__aoi_hits__[aoi_id] = {}
 
-            H, status = cv2.findHomography(self.__features_points__, detected_features_points)
-            rows, cols, ch = self.__snapshot__.shape
+            H, status = cv2.findHomography(item.features_points, detected_features_points)
+            rows, cols, ch = item.snapshot.shape
 
-            bounding_box_src = np.array([[0,0,1], [0, rows-1,1], [cols-1, rows-1,1], [cols-1, 0,1]])
+            #bounding_box_src = np.array([[0,0,1], [0, rows-1,1], [cols-1, rows-1,1], [cols-1, 0,1]])
+            bounding_box_src = np.array([[item.features_points[0][0],item.features_points[0][1],1],
+                                        [item.features_points[1][0], item.features_points[1][1],1],
+                                        [item.features_points[3][0], item.features_points[3][1],1],
+                                        [item.features_points[2][0], item.features_points[2][1],1]])
             bounding_box_dst = H.dot(bounding_box_src.T)
 
             bounding_box_dst = np.array([[bounding_box_dst[0,0]/bounding_box_dst[2,0], bounding_box_dst[1,0]/bounding_box_dst[2,0]],
@@ -70,13 +76,13 @@ class AOI:
     def getDetectedItems(self, opencvMat):
         raise NotImplementedError( "AOIs should have implemented getDetectedItems() method" )
 
-    def contains(self, ts, aoi_id, gaze_x, gaze_y):
+    def contains(self, ts, aoi_id, gaze_x, gaze_y, threshold=-60.0):
         res = False
         if ts in self.__aoi_regions__[aoi_id].keys():
-            res = mplPath.Path(self.__aoi_regions__[aoi_id][ts]).contains_point((gaze_x, gaze_y))
+            res = mplPath.Path(self.__aoi_regions__[aoi_id][ts]).contains_point((gaze_x, gaze_y), radius=threshold)
         return res
 
-    def drawAOIsBox(self, opencvMat, ts, color=(0, 255, 0)):
+    def drawAOIsBox(self, opencvMat, ts, color=(255, 0, 0)):
         for aoi_id in self.__aoi_regions__.keys():
             if ts in self.__aoi_regions__[aoi_id].keys():
                 aoi_points = self.__aoi_regions__[aoi_id][ts]
@@ -96,14 +102,12 @@ class AOI:
                 return aoi_id
         return None
 
-    def exportHeatmap(self, filename='heatmap.png'):
+    def exportHeatmap(self):
         H = Heatmap()
-        gazepoints = []
-        for aoi_id in self.__aoi_hits__.keys():
-            gazepoints.extend(list(self.__aoi_hits__[aoi_id].values()))
-        rows, cols, ch = self.__snapshot__.shape
-        dispsize = (int(cols), int(rows))
-        H.draw(gazepoints, dispsize, self.__snapshot_filename__, savefilename=filename)
+        for aoi_id, aoi_item in self.__aoi_items__.items():
+            rows, cols, ch = aoi_item.snapshot.shape
+            dispsize = (int(cols), int(rows))
+            H.draw( list(self.__aoi_hits__[aoi_id].values()), dispsize, aoi_item.snapshot_filename, savefilename=('%s_%s.png' % ('heatmap', aoi_id)) )
 
     def showLandmarks(self, opencvMat, landmarks, color=(0, 0, 255)):
         for (x,y) in landmarks:
