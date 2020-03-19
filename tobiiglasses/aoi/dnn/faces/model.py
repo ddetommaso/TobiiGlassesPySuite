@@ -35,8 +35,8 @@ FACIAL_LANDMARKS_IDXS = OrderedDict([
         ("jaw", (0, 16))
         ])
 
-FILENAME_SHAPE_PREDICTOR = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'data', 'shape_predictor_68_face_landmarks.dat')
-FILENAME_FACE_LANDMARKS = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'data', 'facial_landmarks_68markup.png')
+FILENAME_SHAPE_PREDICTOR = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'shape_predictor_68_face_landmarks.dat')
+FILENAME_FACE_LANDMARKS = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'facial_landmarks_68markup.png')
 FACE_FEATURES_POINTS = np.array( [[132, 60], [330, 620], [515, 615], [675, 50]]) #ids = 17, 3, 13, 26
 
 class Face:

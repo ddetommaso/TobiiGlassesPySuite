@@ -13,16 +13,16 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='tobiiglasses',
-    version='0.9',
+    version='1.0',
     description='An open-source Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
-    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/0.9.tar.gz',
-    install_requires=['tobiiglassesctrl>=2.2.5', 'tornado', 'nose', 'pandas', 'opencv-python>=4.2.0.32', 'opencv-contrib-python>=4.2.0.32', 'sortedcontainers==1.5.10', 'dlib'],
+    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/1.0.tar.gz',
+    install_requires=['tobiiglassesctrl>=2.2.5', 'tornado', 'nose', 'pandas', 'matplotlib', 'opencv-contrib-python', 'sortedcontainers==1.5.10', 'dlib'],
     author='Davide De Tommaso',
     author_email='dtmdvd@gmail.com',
     keywords=['eye-tracker','tobii','glasses', 'tobii pro glasses 2', 'tobii glasses', 'eye tracking'],
     packages=find_packages(exclude=['examples*']),
-    package_data={'tobiiglasses.aoi.dnn.faces': ['data/*.*']},
+    package_data={'tobiiglasses.aoi.dnn.faces': ['facial_landmarks_68markup.png', 'shape_predictor_68_face_landmarks.dat']},
     include_package_data=True,
     classifiers = [
                 'Programming Language :: Python :: 2.7',

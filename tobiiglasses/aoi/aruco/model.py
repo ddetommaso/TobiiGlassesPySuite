@@ -52,22 +52,22 @@ class Aruco_Detector:
 class AOI_Aruco:
     MARKERS_X = 3
     MARKERS_Y = 2
-    MARKER_LENGTH = 0.1
-    MARKER_SEPARATION = 0.1
     ARUCO_DICT = aruco.Dictionary_get(aruco.DICT_4X4_50)
 
-    def __init__(self, aoi_label, aoi_id, aruco_detector):
+    def __init__(self, aoi_label, aoi_id, aruco_detector, markerLength=0.1, markerSeparation=0.1):
         self.aoi_label = aoi_label
         self.aoi_id = aoi_id
-        self.feature_3dpoints = np.array( [[AOI_Aruco.MARKER_LENGTH, 0.0, 0.0],
-                                           [2*AOI_Aruco.MARKER_LENGTH + 2*AOI_Aruco.MARKER_SEPARATION, 0.0, 0.0],
-                                           [AOI_Aruco.MARKER_LENGTH, 2*AOI_Aruco.MARKER_LENGTH + AOI_Aruco.MARKER_SEPARATION, 0.0],
-                                           [2*AOI_Aruco.MARKER_LENGTH + 2*AOI_Aruco.MARKER_SEPARATION, 2*AOI_Aruco.MARKER_LENGTH + AOI_Aruco.MARKER_SEPARATION, 0.0]])
+        self.markerLength = markerLength
+        self.markerSeparation = markerSeparation
+        self.feature_3dpoints = np.array( [[self.markerLength, 0.0, 0.0],
+                                           [2*self.markerLength + 2*self.markerSeparation, 0.0, 0.0],
+                                           [self.markerLength, 2*self.markerLength + self.markerSeparation, 0.0],
+                                           [2*self.markerLength + 2*self.markerSeparation, 2*self.markerLength + self.markerSeparation, 0.0]])
 
         self.__aoi__ = aruco.GridBoard_create(markersX=AOI_Aruco.MARKERS_X,
                                    markersY=AOI_Aruco.MARKERS_Y,
-                                   markerLength=AOI_Aruco.MARKER_LENGTH,
-                                   markerSeparation=AOI_Aruco.MARKER_SEPARATION,
+                                   markerLength=self.markerLength,
+                                   markerSeparation=self.markerSeparation,
                                    dictionary=AOI_Aruco.ARUCO_DICT,
                                    firstMarker=aoi_id*AOI_Aruco.MARKERS_X*AOI_Aruco.MARKERS_Y)
 
@@ -118,11 +118,11 @@ class AOI_Aruco_Model(AOI):
                 AOI_Items.append( AOI_Item(label, detected_features_points, board.getAOIFilename(), board.features_2dpoints) )
         return AOI_Items
 
-    def createArucoAOI(self, aoi_label):
+    def createArucoAOI(self, aoi_label, markerLength=0.1, markerSeparation=0.1):
         if aoi_label in self.__aoi_boards__.keys():
             logging.error('aoi_label is already present. AOI will not be created!')
         else:
-            self.__aoi_boards__[aoi_label] = AOI_Aruco(aoi_label, len(self.__aoi_boards__.keys()), self.__aruco_detector__)
+            self.__aoi_boards__[aoi_label] = AOI_Aruco(aoi_label, len(self.__aoi_boards__.keys()), self.__aruco_detector__, markerLength, markerSeparation)
 
     def exportArucoAOIs(self, filepath='./'):
         for label, board in self.__aoi_boards__.items():
