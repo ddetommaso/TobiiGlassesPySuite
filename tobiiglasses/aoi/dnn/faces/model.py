@@ -21,9 +21,8 @@ import os
 import sys
 import tobiiglasses
 from collections import OrderedDict
-from tobiiglasses.aoi.dnn.model import AOI_DNN_Model
-from tobiiglasses.aoi.model import AOI
-from tobiiglasses.aoi.model import AOI_Item
+#from tobiiglasses.aoi.dnn.model import AOI_DNN_Model
+from tobiiglasses.aoi.model import AOI, AOI_Item
 
 FACIAL_LANDMARKS_IDXS = OrderedDict([
         ("mouth", (48, 67)),
@@ -35,8 +34,8 @@ FACIAL_LANDMARKS_IDXS = OrderedDict([
         ("jaw", (0, 16))
         ])
 
-FILENAME_SHAPE_PREDICTOR = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'shape_predictor_68_face_landmarks.dat')
-FILENAME_FACE_LANDMARKS = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'facial_landmarks_68markup.png')
+FILENAME_SHAPE_PREDICTOR = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'faces', 'shape_predictor_68_face_landmarks.dat')
+FILENAME_FACE_LANDMARKS = os.path.join(tobiiglasses.aoi.dnn.__path__[0], 'faces', 'facial_landmarks_68markup.png')
 FACE_FEATURES_POINTS = np.array( [[132, 60], [330, 620], [515, 615], [675, 50]]) #ids = 17, 3, 13, 26
 
 class Face:

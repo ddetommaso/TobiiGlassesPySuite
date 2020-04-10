@@ -33,6 +33,8 @@ class GazeEvents:
     EventDuration = "Event Duration"
     Fixation_X = "Fixation X"
     Fixation_Y = "Fixation Y"
+    AOI_Mapped_Fixation_X = "AOI_Mapped_Fixation_X"
+    AOI_Mapped_Fixation_Y = "AOI_Mapped_Fixation_Y"
     AOI = "AOI"
     AOI_Score = "AOI Score"
     Saccade_Start_X = "Saccade Start X"
@@ -69,6 +71,8 @@ class GazeEvents:
         self.__events__[GazeEvents.Fixation_Y] = GazeItem(GazeEvents.Fixation_Y, np.dtype('u4'))
         self.__events__[GazeEvents.EventIndex] = GazeItem(GazeEvents.EventIndex, np.dtype('u4'))
         self.__events__[GazeEvents.EventDuration] = GazeItem(GazeEvents.EventDuration, np.dtype('u4'))
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_X] = GazeItem(GazeEvents.AOI_Mapped_Fixation_X, np.dtype('u4'))
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_Y] = GazeItem(GazeEvents.AOI_Mapped_Fixation_Y, np.dtype('u4'))
         self.__events__[GazeEvents.AOI] = GazeItem(GazeEvents.AOI, np.dtype(object))
         self.__events__[GazeEvents.AOI_Score] = GazeItem(GazeEvents.AOI_Score, np.dtype('f2'))
         self.__events__[GazeEvents.Saccade_Start_X] = GazeItem(GazeEvents.Saccade_Start_X, np.dtype('f2'))
@@ -145,7 +149,9 @@ class GazeEvents:
     def getTimestamps(self):
         return list(self.__events__[GazeEvents.Timestamp].values())
 
-    def setAOI(self, ts, aoi_label, aoi_score):
+    def setAOI(self, ts, aoi_fixation_x, aoi_fixation_y, aoi_label, aoi_score):
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_X][ts] = aoi_fixation_x
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_Y][ts] = aoi_fixation_y
         self.__events__[GazeEvents.AOI][ts] = aoi_label
         self.__events__[GazeEvents.AOI_Score][ts] = aoi_score
 

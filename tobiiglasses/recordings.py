@@ -26,6 +26,7 @@ from tobiiglasses.gazedata import GazeData
 from tobiiglasses.events import GazeEvents
 from tobiiglasses.exporter import RawCSV, ExtendedRawCSV
 from tobiiglasses.video import VideoFramesAndMappedGaze, VideoAndGaze
+from tobiiglasses.metrics import Fixations_Metrics
 
 import cv2.aruco as aruco
 
@@ -67,11 +68,11 @@ class Recording:
     def __loadSegmentIDs__(self):
         self.__segment_ids__.extend(range(1, self.__recording__.getSegmentsN() + 1))
 
-    def exportFull(self, fixation_filter, filepath=None, filename='output.avi', segment_id=1, aoi_models=[]):
+    def exportFull(self, fixation_filter, filepath=None, csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[]):
         fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
         if filepath is None:
             filepath = "."
-        logging.info('Exporting video with mapped fixations in file %s in folder %s' % (filename, filepath))
+        logging.info('Exporting video with mapped fixations in folder %s' % filepath)
         data = self.getGazeData(segment_id)
         fps = data.getFrameFPS()
         width = data.getFrameWidth()
@@ -80,9 +81,18 @@ class Recording:
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(filename,fourcc, fps, (width,height))
+        out = cv2.VideoWriter(video_filename,fourcc, fps, (width,height))
+
+
         for frame, x, y, ts in framesAndGaze:
+            if not (x > 0 or y > 0):
+                continue
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
+            parameters =  aruco.DetectorParameters_create()
+            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
             (fx, fy, duration) = fixations.getClosestFixation(ts)
+
             for model in aoi_models:
                 model.apply(frame, ts, fx, fy, fixations)
                 model.drawAOIsBox(frame, ts)
@@ -95,12 +105,13 @@ class Recording:
                         color = (0,255,0)
                         cv2.putText(frame, aoi_id, (fx, fy), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 cv2.circle(frame,(fx,fy), 30, color , 2)
-            out.write(frame)
+            frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+            out.write(frame_markers)
         cap.release()
         model.exportHeatmap()
-        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, 'dave', 'Fixations')
+        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, csv_filename, 'Fixations')
         fixations.exportCSV(filepath, filename, ts_filter=None)
-
+        f_metrics = Fixations_Metrics(fixations)
 
 
     def exportCSV_ExtendedRawData(self, filepath=None, filename=None, segment_id=None):

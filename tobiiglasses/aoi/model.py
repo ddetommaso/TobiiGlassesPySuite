@@ -69,7 +69,9 @@ class AOI:
                 q = np.linalg.inv(H).dot(p)
                 q /= q[2]
                 self.__aoi_hits__[aoi_id][ts] = [q[0], q[1]]
-                gaze_events.setAOI(ts, aoi_id, item.aoi_score)
+                gaze_events.setAOI(ts, int(q[0]), int(q[1]), aoi_id, item.aoi_score)
+            else:
+                gaze_events.setAOI(ts, 0, 0, aoi_id, 0)
 
             self.showLandmarks(opencvMat, item.landmarks)
 

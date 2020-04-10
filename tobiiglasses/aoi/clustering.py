@@ -117,7 +117,7 @@ class AOI_ClusterModel(AOI_Model):
         color_labels = self.__assignColorLabels__(self.__labels__)
         i = 0
         for ts in ts_list:
-            gaze_events.setAOI(ts, color_labels[i], self.__getAOI_Distance__(self.__X__[i][0], self.__X__[i][1], self.__means__[self.__labels__[i]]))
+            gaze_events.setAOI(ts, self.__X__[i][0], self.__X__[i][1], color_labels[i], self.__getAOI_Distance__(self.__X__[i][0], self.__X__[i][1], self.__means__[self.__labels__[i]]))
             i+=1
 
     def saveModel(self, filename):
