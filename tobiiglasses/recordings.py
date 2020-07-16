@@ -68,7 +68,7 @@ class Recording:
     def __loadSegmentIDs__(self):
         self.__segment_ids__.extend(range(1, self.__recording__.getSegmentsN() + 1))
 
-    def exportFull(self, fixation_filter, filepath=None, csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[]):
+    def exportFull(self, fixation_filter, filepath='.', csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[]):
         fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
         logging.info('Exporting video with mapped fixations in folder %s' % filepath)
         data = self.getGazeData(segment_id)
@@ -79,7 +79,7 @@ class Recording:
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(video_filename,fourcc, fps, (width,height))
+        out = cv2.VideoWriter(os.path.join(filepath, video_filename),fourcc, fps, (width,height))
 
 
         for frame, x, y, ts in framesAndGaze:
@@ -112,7 +112,7 @@ class Recording:
                 aoi_id = model.getAOI(ts, fx, fy)
                 if model.contains(ts, aoi_id, fx, fy):
                     fixations.setAOI(ts, 0, 0, aoi_id, 100)
-            model.exportHeatmap()
+            model.exportHeatmap(filepath)
 
         (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, csv_filename, 'Fixations')
         fixations.exportCSV(filepath, filename, ts_filter=None)

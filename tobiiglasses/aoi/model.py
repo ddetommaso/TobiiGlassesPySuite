@@ -16,6 +16,7 @@
 import numpy as np
 import cv2
 import bisect
+import os
 import matplotlib.path as mplPath
 from tobiiglasses.aoi.heatmaps import Heatmap
 
@@ -119,12 +120,12 @@ class AOI:
                 return aoi_id
         return None
 
-    def exportHeatmap(self):
+    def exportHeatmap(self, filepath='.'):
         H = Heatmap()
         for aoi_id, aoi_item in self.__aoi_items__.items():
             rows, cols, ch = aoi_item.snapshot.shape
             dispsize = (int(cols), int(rows))
-            H.draw( list(self.__aoi_hits__[aoi_id].values()), dispsize, aoi_item.snapshot_filename, savefilename=('%s_%s.png' % ('heatmap', aoi_id)) )
+            H.draw( list(self.__aoi_hits__[aoi_id].values()), dispsize, aoi_item.snapshot_filename, savefilename=(os.path.join(filepath, '%s_%s.png') % ('heatmap', aoi_id)) )
 
     def showLandmarks(self, opencvMat, landmarks, color=(0, 0, 255)):
         for (x,y) in landmarks:
