@@ -70,8 +70,6 @@ class Recording:
 
     def exportFull(self, fixation_filter, filepath=None, csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[]):
         fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
-        if filepath is None:
-            filepath = "."
         logging.info('Exporting video with mapped fixations in folder %s' % filepath)
         data = self.getGazeData(segment_id)
         fps = data.getFrameFPS()
