@@ -33,10 +33,12 @@ class VideoFramesAndMappedGaze:
         self.__current_frameAndMappedGaze__ = None
         self.__df__ = gazedata.toDataFrame()
         self.__vts__ = gazedata.getVTS()
-        self.__vts_list__ = self.__vts__.keys()
+        self.__vts_list__ = self.__vts__.values()
+        self.__ts_list__ = self.__vts__.keys()
         self.__frame_duration__ = int(1000/fps)
         self.__current_time__ = self.__vts_list__[0]
         self.__i__ = 0
+        self.__offset__ = self.__ts_list__[0] - self.__vts_list__[0]
 
     def __iter__(self):
         return self
@@ -47,9 +49,11 @@ class VideoFramesAndMappedGaze:
             if ret == True:
                 if self.__current_time__ > self.__vts_list__[self.__i__]:
                     if self.__i__ < len(self.__vts_list__) - 1:
-                        self.__i__+=1
-                delay = int(self.__vts__[self.__vts_list__[self.__i__]])
-                T = self.__df__.index[self.__df__.index.get_loc(self.__current_time__+self.__i__, method='nearest')]
+                        self.__i__ += 1
+                        self.__offset__ = self.__ts_list__[self.__i__] \
+                                 - self.__vts_list__[self.__i__]
+                T = self.__df__.index[self.__df__.index.get_loc(self.__current_time__\
+                    + self.__offset__, method='nearest')]
                 x = self.__df__.at[T, GazeData.GazePixelX]
                 y = self.__df__.at[T, GazeData.GazePixelY]
             else:

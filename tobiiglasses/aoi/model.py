@@ -15,6 +15,7 @@
 
 import numpy as np
 import cv2
+import bisect
 import matplotlib.path as mplPath
 from tobiiglasses.aoi.heatmaps import Heatmap
 
@@ -37,7 +38,7 @@ class AOI:
         self.__aoi_hits__ = {}
         self.__aoi_items__ = {}
 
-    def apply(self, opencvMat, ts, gaze_x, gaze_y, gaze_events):
+    def apply(self, opencvMat, ts, gaze_x, gaze_y, gaze_events=None):
         for item in self.getDetectedItems(opencvMat):
             detected_features_points = item.detected_features_points
             aoi_id = item.aoi_id
@@ -50,7 +51,6 @@ class AOI:
             H, status = cv2.findHomography(item.features_points, detected_features_points)
             rows, cols, ch = item.snapshot.shape
 
-            #bounding_box_src = np.array([[0,0,1], [0, rows-1,1], [cols-1, rows-1,1], [cols-1, 0,1]])
             bounding_box_src = np.array([[item.features_points[0][0],item.features_points[0][1],1],
                                         [item.features_points[1][0], item.features_points[1][1],1],
                                         [item.features_points[3][0], item.features_points[3][1],1],
@@ -64,24 +64,39 @@ class AOI:
 
             self.__aoi_regions__[aoi_id][ts] = bounding_box_dst
 
+
             if self.contains(ts, aoi_id, gaze_x, gaze_y):
                 p = [gaze_x, gaze_y, 1]
                 q = np.linalg.inv(H).dot(p)
                 q /= q[2]
                 self.__aoi_hits__[aoi_id][ts] = [q[0], q[1]]
-                gaze_events.setAOI(ts, int(q[0]), int(q[1]), aoi_id, item.aoi_score)
+                label_color = (0, 255, 0)
             else:
-                gaze_events.setAOI(ts, 0, 0, aoi_id, 0)
+                label_color = (255, 0, 0)
 
-            self.showLandmarks(opencvMat, item.landmarks)
+            cv2.putText(opencvMat, aoi_id, (int(self.__aoi_regions__[aoi_id][ts][0][0]), int(self.__aoi_regions__[aoi_id][ts][0][1])), cv2.FONT_HERSHEY_SIMPLEX, 0.7, label_color, 2)
 
     def getDetectedItems(self, opencvMat):
         raise NotImplementedError( "AOIs should have implemented getDetectedItems() method" )
 
-    def contains(self, ts, aoi_id, gaze_x, gaze_y, threshold=-60.0):
+    def getClosestRegion(self, aoi_id, ts):
+        ts_list = list(self.__aoi_regions__[aoi_id].keys())
+        ts_index = bisect.bisect_left(ts_list, ts)
+        if ts_index == 0:
+            ts_closest = ts_list[ts_index]
+        else:
+            ts_closest = ts_list[ts_index-1]
+        return self.__aoi_regions__[aoi_id][ts_closest]
+
+    def contains(self, ts, aoi_id, gaze_x, gaze_y, threshold=10.0):
         res = False
-        if ts in self.__aoi_regions__[aoi_id].keys():
-            res = mplPath.Path(self.__aoi_regions__[aoi_id][ts]).contains_point((gaze_x, gaze_y), radius=threshold)
+        if aoi_id in self.__aoi_regions__.keys():
+            if ts in self.__aoi_regions__[aoi_id].keys():
+                res = mplPath.Path(self.__aoi_regions__[aoi_id][ts]).contains_point((gaze_x, gaze_y), radius=threshold)
+            else:
+                region = self.getClosestRegion(aoi_id, ts)
+                if not region is None:
+                    res = mplPath.Path(region).contains_point((gaze_x, gaze_y), radius=threshold)
         return res
 
     def drawAOIsBox(self, opencvMat, ts, color=(255, 0, 0)):

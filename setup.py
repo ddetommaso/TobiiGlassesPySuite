@@ -13,10 +13,10 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='tobiiglasses',
-    version='1.1',
+    version='1.2',
     description='An open-source Python suite for Tobii Pro Glasses 2',
     url='https://github.com/ddetommaso/TobiiGlassesPySuite',
-    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/1.1.tar.gz',
+    download_url='https://github.com/ddetommaso/TobiiGlassesPySuite/archive/1.2.tar.gz',
     install_requires=['tobiiglassesctrl>=2.2.6', 'tornado', 'nose', 'pandas', 'matplotlib', 'opencv-contrib-python', 'sortedcontainers==1.5.10', 'dlib'],
     author='Davide De Tommaso',
     author_email='dtmdvd@gmail.com',

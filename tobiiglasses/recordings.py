@@ -88,14 +88,13 @@ class Recording:
             if not (x > 0 or y > 0):
                 continue
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-            parameters =  aruco.DetectorParameters_create()
-            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+            #aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
+            #parameters =  aruco.DetectorParameters_create()
+            #corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
             (fx, fy, duration) = fixations.getClosestFixation(ts)
 
             for model in aoi_models:
                 model.apply(frame, ts, fx, fy, fixations)
-                model.drawAOIsBox(frame, ts)
 
             if fx>0 and fy>0:
                 color = (0,0,255)
@@ -103,12 +102,20 @@ class Recording:
                     aoi_id = model.getAOI(ts, fx, fy)
                     if not aoi_id is None:
                         color = (0,255,0)
-                        cv2.putText(frame, aoi_id, (fx, fy), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.circle(frame,(fx,fy), 30, color , 2)
-            frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
-            out.write(frame_markers)
+                    model.drawAOIsBox(frame, ts)
+                cv2.circle(frame,(fx,fy), 60, color , 2)
+            #frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+            out.write(frame)
         cap.release()
-        model.exportHeatmap()
+
+        for model in aoi_models:
+            for ts in fixations.getTimestamps():
+                (fx, fy, duration) = fixations.getClosestFixation(ts)
+                aoi_id = model.getAOI(ts, fx, fy)
+                if model.contains(ts, aoi_id, fx, fy):
+                    fixations.setAOI(ts, 0, 0, aoi_id, 100)
+            model.exportHeatmap()
+
         (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, csv_filename, 'Fixations')
         fixations.exportCSV(filepath, filename, ts_filter=None)
         f_metrics = Fixations_Metrics(fixations)
@@ -127,7 +134,7 @@ class Recording:
     def exportCSV_RawData(self, filepath=None, filename=None, segment_id=1):
         self.__exportData_CSV__(filepath, filename, 'Raw', segment_id, RawCSV)
 
-    def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, aoi_dnn_models=[]):
+    def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, aoi_models=[]):
         logging.info('Exporting video with mapped gaze in file %s in folder %s' % (filename, filepath))
         data = self.getGazeData(segment_id)
         fps = data.getFrameFPS()
@@ -139,7 +146,7 @@ class Recording:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         out = cv2.VideoWriter(filename,fourcc, fps, (width,height))
         for frame, x, y, ts in framesAndGaze:
-            for model in aoi_dnn_models:
+            for model in aoi_models:
                 model.apply(frame, ts, x, y)
                 model.drawAOIsBox(frame, ts)
 
@@ -168,7 +175,7 @@ class Recording:
             self.__segment_data__[segment_id] = GazeData(segment)
         return self.__segment_data__[segment_id]
 
-    def getGazeEvents(self, segment_id):
+    def getGazeEvents(self, segment_id=1):
         segment = self.__recording__.getSegment(segment_id)
         if not segment_id in self.__segment_events__.keys():
             self.__segment_events__[segment_id] = GazeEvents()
@@ -180,7 +187,7 @@ class Recording:
     def getParticipantName(self):
         return self.__recording__.getParticipant().getName()
 
-    def replay(self, segment_id):
+    def replay(self, segment_id=1, aoi_models=[]):
         logging.info('Replaying video with mapped gaze...')
         data = self.getGazeData(segment_id)
         fps = data.getFrameFPS()
@@ -189,9 +196,15 @@ class Recording:
         f = self.__recording__.getSegment(segment_id).getVideoFilename()
         cap = cv2.VideoCapture(f)
         framesAndGaze = iter(VideoFramesAndMappedGaze(data, cap, fps))
+
         for frame, x, y, ts in framesAndGaze:
             if x>0 and y>0:
-                cv2.circle(frame,(int(x),int(y)), 60, (0,0,255), 2)
+                color = (0,0,255)
+                for model in aoi_models:
+                    model.apply(frame, ts, x, y)
+                    model.drawAOIsBox(frame, ts)
+
+                cv2.circle(frame,(x,y), 60, color , 2)
             cv2.imshow('Frame',frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break

@@ -91,3 +91,19 @@ class FilterDT(FixationsFilter):
                 start_index = stop_index
             else:
                 start_index += 1
+
+
+class FilterRaw(FixationsFilter):
+    def __init__(self):
+        FixationsFilter.__init__(self)
+
+    def filter(self, gaze_events):
+        logging.info("FilterRaw is processing gaze data ...")
+
+        ts = self.__x__.keys()
+        prev_ts = -1
+
+        for ts in self.__x__.keys():
+            if prev_ts > -1:
+                self.__addFixation__(ts, ts-prev_ts, self.__x__[ts], self.__y__[ts], gaze_events)
+            prev_ts = ts

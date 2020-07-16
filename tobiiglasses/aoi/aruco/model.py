@@ -32,9 +32,9 @@ class Aruco_Detector:
         self.__cameraMatrix__ = cameraMatrix
         self.__distCoeffs__ = distCoeffs
 
-    def getCorners(self, opencvMat, auro_dict):
+    def getCorners(self, opencvMat, aruco_dict):
         opencvMat = cv2.cvtColor(opencvMat, cv2.COLOR_BGR2GRAY)
-        corners, ids, rejectedImgPoints = aruco.detectMarkers(opencvMat, auro_dict)
+        corners, ids, rejectedImgPoints = aruco.detectMarkers(opencvMat, aruco_dict)
         return (corners, ids)
 
     def getDetectedFeatures(self, board, corners, ids):
@@ -50,31 +50,39 @@ class Aruco_Detector:
 
 
 class AOI_Aruco:
-    MARKERS_X = 3#7
-    MARKERS_Y = 2#4
-    ARUCO_DICT = aruco.Dictionary_get(aruco.DICT_4X4_100)
 
-    def __init__(self, aoi_label, aoi_id, aruco_detector, markerLength=0.1, markerSeparation=0.1, width=1920, height=1080):
+    def __init__(self, aoi_label, aoi_id, aruco_detector, markerLength=0.1, markerSeparation=0.1, width=1920, height=1080, markers_x=3,  markers_y=2, aruco_dict=aruco.Dictionary_get(aruco.DICT_4X4_100)):
         self.aoi_label = aoi_label
         self.aoi_id = aoi_id
         self.markerLength = markerLength
         self.markerSeparation = markerSeparation
         self.__width__ = width
         self.__height__ = height
+        self.__markers_x__ = markers_x
+        self.__markers_y__ = markers_y
+        self.__aruco_dict__ = aruco_dict
+        self.__margin_size__ = 40
 
-        self.feature_3dpoints = np.array( [[self.markerLength, AOI_Aruco.MARKERS_Y*self.markerLength + (AOI_Aruco.MARKERS_Y-1)*self.markerSeparation, 0.0],
-                                           [(AOI_Aruco.MARKERS_X-1)*self.markerLength + (AOI_Aruco.MARKERS_X-1)*self.markerSeparation, AOI_Aruco.MARKERS_Y*self.markerLength + (AOI_Aruco.MARKERS_Y-1)*self.markerSeparation, 0.0],
-                                           [self.markerLength, 0.0, 0.0],
-                                           [(AOI_Aruco.MARKERS_X-1)*self.markerLength + (AOI_Aruco.MARKERS_X-1)*self.markerSeparation, 0.0, 0.0] ])
+        if self.__markers_x__ > 1 and self.__markers_y__ > 1:
+            self.feature_3dpoints = np.array( [[self.markerLength, self.__markers_y__*self.markerLength + (self.__markers_y__-1)*self.markerSeparation, 0.0],
+                                               [(self.__markers_x__-1)*self.markerLength + (self.__markers_x__-1)*self.markerSeparation, self.__markers_y__*self.markerLength + (self.__markers_y__-1)*self.markerSeparation, 0.0],
+                                               [self.markerLength, 0.0, 0.0],
+                                               [(self.__markers_x__-1)*self.markerLength + (self.__markers_x__-1)*self.markerSeparation, 0.0, 0.0] ])
 
-        self.__aoi__ = aruco.GridBoard_create(markersX=AOI_Aruco.MARKERS_X,
-                                   markersY=AOI_Aruco.MARKERS_Y,
+        elif self.__markers_x__ == 1 and self.__markers_y__ == 1:
+            self.feature_3dpoints = np.array( [[0.0, self.markerLength, 0.0],
+                                               [self.markerLength, self.markerLength, 0.0],
+                                               [0.0, 0.0, 0.0],
+                                               [self.markerLength, 0.0, 0.0] ])
+
+        self.__aoi__ = aruco.GridBoard_create(markersX=self.__markers_x__,
+                                   markersY=self.__markers_y__,
                                    markerLength=self.markerLength,
                                    markerSeparation=self.markerSeparation,
-                                   dictionary=AOI_Aruco.ARUCO_DICT,
-                                   firstMarker=aoi_id*AOI_Aruco.MARKERS_X*AOI_Aruco.MARKERS_Y)
+                                   dictionary=self.__aruco_dict__,
+                                   firstMarker=aoi_id*self.__markers_x__*self.__markers_y__)
 
-        corners, self.__ids__ = aruco_detector.getCorners(self.getCVMat(), AOI_Aruco.ARUCO_DICT)
+        corners, self.__ids__ = aruco_detector.getCorners(self.getCVMat(), self.__aruco_dict__)
         self.features_2dpoints = aruco_detector.getDetectedFeatures(self, corners, self.__ids__)
 
     def estimatePose(self, corners, ids, cameraMatrix, distCoeffs):
@@ -85,7 +93,8 @@ class AOI_Aruco:
 
     def exportAOI(self, filepath):
         img = self.getCVMat()
-        cv2.rectangle(img,(self.features_2dpoints[0][0],self.features_2dpoints[0][1]),(self.features_2dpoints[3][0],self.features_2dpoints[3][1]),(255,255,255),-1)
+        if self.__markers_x__ > 1 and self.__markers_y__ > 1:
+            cv2.rectangle(img,(self.features_2dpoints[0][0],self.features_2dpoints[0][1]-10),(self.features_2dpoints[3][0],self.features_2dpoints[3][1]+10),(255,255,255),-1)
         cv2.imwrite(os.path.join(filepath, self.getAOIFilename()), img)
 
     def getAOI(self):
@@ -94,7 +103,7 @@ class AOI_Aruco:
     def getCVMat(self):
         img = np.zeros([self.__height__, self.__width__, 1],dtype=np.uint8)
         img.fill(255)
-        self.__aoi__.draw((self.__width__, self.__height__), img, 40)
+        self.__aoi__.draw((self.__width__, self.__height__), img, marginSize = self.__margin_size__)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         return img
 
@@ -102,16 +111,17 @@ class AOI_Aruco:
         return "aruco_%s.png" % self.aoi_label
 
 class AOI_Aruco_Model(AOI):
-    def __init__(self, cameraMatrix, distCoeffs):
+    def __init__(self, cameraMatrix, distCoeffs, aruco_dict=aruco.DICT_4X4_100):
         AOI.__init__(self)
         self.__cameraMatrix__ = cameraMatrix
         self.__distCoeffs__ = distCoeffs
         self.__aoi_boards__ = {}
         self.__aruco_detector__ = Aruco_Detector(cameraMatrix, distCoeffs)
+        self.__aruco_dict__ = aruco.Dictionary_get(aruco_dict)
 
 
     def getDetectedItems(self, opencvMat):
-        (corners, ids) = self.__aruco_detector__.getCorners(opencvMat, AOI_Aruco.ARUCO_DICT)
+        (corners, ids) = self.__aruco_detector__.getCorners(opencvMat, self.__aruco_dict__)
         AOI_Items = []
         if ids is None:
             return AOI_Items
@@ -134,11 +144,14 @@ class AOI_Aruco_Model(AOI):
 
         return AOI_Items
 
-    def createArucoAOI(self, aoi_label, markerLength=0.1, markerSeparation=0.1, width=1920, height=1080):
+    def createArucoAOI(self, aoi_label, markerLength=0.1, markerSeparation=0.1, width=1920, height=1080, markers_x=3, markers_y=2, aruco_marker_id=-1):
         if aoi_label in self.__aoi_boards__.keys():
             logging.error('aoi_label is already present. AOI will not be created!')
         else:
-            self.__aoi_boards__[aoi_label] = AOI_Aruco(aoi_label, len(self.__aoi_boards__.keys()), self.__aruco_detector__, markerLength, markerSeparation, width, height)
+            if aruco_marker_id == -1:
+                self.__aoi_boards__[aoi_label] = AOI_Aruco(aoi_label, len(self.__aoi_boards__.keys()), self.__aruco_detector__, markerLength, markerSeparation, width, height, markers_x, markers_y, self.__aruco_dict__)
+            else:
+                self.__aoi_boards__[aoi_label] = AOI_Aruco(aoi_label, aruco_marker_id, self.__aruco_detector__, markerLength, markerSeparation, width, height, markers_x, markers_y, self.__aruco_dict__)
             self.__aoi_boards__[aoi_label].exportAOI('./')
 
     def exportArucoAOIs(self, filepath='./'):
