@@ -60,6 +60,7 @@ class GazeData:
     Timestamp = "Timestamp"
     Gidx = "Gaze Index"
     LoggedEvents = "Logged Events"
+    JSONEvents = "JSON Events"
     GazePositionX = "Gaze Position X"
     GazePositionY = "Gaze Position Y"
     Gaze3DPositionX = "Gaze 3D Position X"
@@ -120,8 +121,8 @@ class GazeData:
         if isinstance(livedatajson_item, APISynch):
             tvalue = livedatajson_item.type.getValue()
             tag = livedatajson_item.tag.getValue()
+            tag_value = livedatajson_item.value.getValue()
             if tvalue != "JsonEvent":
-
                 if tvalue.startswith('#') and tvalue.endswith('#'):
                     var_name = tvalue[1:-1]
                     if not var_name in self.__experiment_vars__.keys():
@@ -141,7 +142,8 @@ class GazeData:
                     self.__gazedata__[GazeData.LoggedEvents][ts] = tvalue
 
             else:
-                self.__gazedata__[GazeData.Timestamp].pop(ts)
+                #self.__gazedata__[GazeData.Timestamp].pop(ts)
+                self.__gazedata__[GazeData.JSONEvents][ts] = tag_value
             return
         else:
             gidx = livedatajson_item.gidx.getValue()
@@ -237,6 +239,7 @@ class GazeData:
         self.__gazedata__[GazeData.Timestamp] = GazeItem(GazeData.Timestamp, np.dtype('float'))
         self.__gazedata__[GazeData.Gidx] = GazeItem(GazeData.Gidx, np.dtype('u4'))
         self.__gazedata__[GazeData.LoggedEvents] = GazeItem(GazeData.LoggedEvents, np.dtype(object))
+        self.__gazedata__[GazeData.JSONEvents] = GazeItem(GazeData.JSONEvents, np.dtype(object))
         self.__gazedata__[GazeData.GazePositionX] = GazeItem(GazeData.GazePositionX, np.dtype('float'))
         self.__gazedata__[GazeData.GazePositionY] = GazeItem(GazeData.GazePositionY, np.dtype('float'))
         self.__gazedata__[GazeData.GazePixelX] = GazeItem(GazeData.GazePixelX, np.dtype('u4'))
@@ -280,6 +283,9 @@ class GazeData:
 
     def getLoggedEvents(self):
         return self.__gazedata__[GazeData.LoggedEvents].getData()
+
+    def getJSONEvents(self):
+        return self.__gazedata__[GazeData.JSONEvents].getData()
 
     def getTimestamps(self):
         return self.__gazedata__[GazeData.Timestamp].values()

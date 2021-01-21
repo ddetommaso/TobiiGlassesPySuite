@@ -28,6 +28,7 @@ from tobiiglasses.exporter import FixationsCSV
 class GazeEvents:
     Timestamp = "Timestamp"
     LoggedEvents = "Logged Events"
+    JSONEvents = "JSON Events"
     GazeType = "Gaze Type"
     EventIndex = "Event Index"
     EventDuration = "Event Duration"
@@ -66,6 +67,7 @@ class GazeEvents:
     def __init_datatypes__(self):
         self.__events__[GazeEvents.Timestamp] = GazeItem(GazeEvents.Timestamp, np.dtype('float'))
         self.__events__[GazeEvents.LoggedEvents] = GazeItem(GazeEvents.LoggedEvents, np.dtype(object))
+        self.__events__[GazeEvents.JSONEvents] = GazeItem(GazeEvents.JSONEvents, np.dtype(object))
         self.__events__[GazeEvents.GazeType] = GazeItem(GazeEvents.GazeType, np.dtype(object))
         self.__events__[GazeEvents.Fixation_X] = GazeItem(GazeEvents.Fixation_X, np.dtype('u4'))
         self.__events__[GazeEvents.Fixation_Y] = GazeItem(GazeEvents.Fixation_Y, np.dtype('u4'))
@@ -92,6 +94,10 @@ class GazeEvents:
     def addLoggedEvent(self, ts, logged_event):
         self.__events__[GazeEvents.Timestamp][ts] = ts
         self.__events__[GazeEvents.LoggedEvents][ts] = logged_event
+
+    def addJSONEvent(self, ts, json_event):
+        self.__events__[GazeEvents.Timestamp][ts] = ts
+        self.__events__[GazeEvents.JSONEvents][ts] = json_event
 
     def addSaccade(self, ts, index, duration, saccade_start_x, saccade_start_y, saccade_end_x, saccade_end_y):
         self.__events__[GazeEvents.Timestamp][ts] = ts

@@ -51,6 +51,7 @@ class RawCSV(CSVFile):
         self.__headers__.append(GazeData.Timestamp)
         self.__headers__.append(GazeData.Gidx)
         self.__headers__.append(GazeData.LoggedEvents)
+        self.__headers__.append(GazeData.JSONEvents)
         self.__headers__.append(GazeData.GazePositionX)
         self.__headers__.append(GazeData.GazePositionY)
         self.__headers__.append(GazeData.GazePixelX)

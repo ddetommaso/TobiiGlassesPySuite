@@ -13,6 +13,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>
 
+import json
+import ast
 
 class TobiiJSONProperty:
 
@@ -34,6 +36,7 @@ class TobiiJSONProperties:
     APISynch_ETS = TobiiJSONProperty("ets", str)
     APISynch_TAG = TobiiJSONProperty("tag", str)
     APISynch_Type = TobiiJSONProperty("type", str)
+    APISynch_VALUE = TobiiJSONProperty("event_value", str)
     Eye = TobiiJSONProperty("eye", str)
     GazeIndex = TobiiJSONProperty("gidx", int)
     GazeDirection = TobiiJSONProperty("gd", [float, float, float])
@@ -120,6 +123,10 @@ class APISynch:
         self.ets = TobiiJSONAttribute(TobiiJSONProperties.APISynch_ETS, json_sample)
         self.type = TobiiJSONAttribute(TobiiJSONProperties.APISynch_Type, json_sample)
         self.tag = TobiiJSONAttribute(TobiiJSONProperties.APISynch_TAG, json_sample)
+        json_tag = self.tag.getValue().replace('\'', "\"")
+        self.value = TobiiJSONAttribute(TobiiJSONProperties.APISynch_VALUE, json.loads(json_tag))
+
+
 
 class VTS:
 
