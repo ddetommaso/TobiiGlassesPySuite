@@ -24,7 +24,7 @@ import tobiiglasses.entities
 from tobiiglasses.entities import TobiiRecording, TobiiSegment
 from tobiiglasses.gazedata import GazeData
 from tobiiglasses.events import GazeEvents
-from tobiiglasses.exporter import RawCSV, ExtendedRawCSV
+from tobiiglasses.exporter import RawCSV, ExtendedRawCSV, FilteredCSV, FixationsCSV
 from tobiiglasses.video import VideoFramesAndMappedGaze, VideoAndGaze
 from tobiiglasses.metrics import Fixations_Metrics
 
@@ -40,12 +40,12 @@ class Recording:
         self.__segment_ids__ = []
         self.__loadSegmentIDs__()
 
-    def __exportData_CSV__(self, filepath=None, filename=None, csv_suffix='', segment_id=None, exporter=None):
+    def __exportData_CSV__(self, exporter, filepath=None, filename=None, csv_suffix='', segment_id=None, events=None):
         segment_ids = self.__getSegmentIDs__(segment_id)
         for s_id in segment_ids:
             gazedata = self.getGazeData(s_id)
             (filepath, filename) = self.__getFileParams__('csv', s_id, filepath, filename, csv_suffix)
-            e = exporter(filepath, filename, gazedata)
+            e = exporter(filepath, filename, gazedata, events)
             e.toCSV()
 
     def __getFileParams__(self, extension, segment_id=None, filepath=None, filename=None, suffix=''):
@@ -68,8 +68,9 @@ class Recording:
     def __loadSegmentIDs__(self):
         self.__segment_ids__.extend(range(1, self.__recording__.getSegmentsN() + 1))
 
-    def exportFull(self, fixation_filter, filepath='.', csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[]):
-        fixations = self.getFixations(fixation_filter, ts_filter=None, segment_id=segment_id)
+
+    def exportFull(self, fixation_filter, filepath='.', csv_filename='output.csv', video_filename='output.avi', segment_id=1, aoi_models=[], ts_filter=None):
+        fixations = self.getFixations(fixation_filter, ts_filter=ts_filter, segment_id=segment_id)
         logging.info('Exporting video with mapped fixations in folder %s' % filepath)
         data = self.getGazeData(segment_id)
         fps = data.getFrameFPS()
@@ -114,23 +115,34 @@ class Recording:
                     fixations.setAOI(ts, 0, 0, aoi_id, 100)
             model.exportHeatmap(filepath)
 
-        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, csv_filename, 'Fixations')
+        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, filename=None, suffix='Fixations')
         fixations.exportCSV(filepath, filename, ts_filter=None)
-        f_metrics = Fixations_Metrics(fixations)
-
+        #(filepath, filename) = self.__getFileParams__('pickle', segment_id, filepath, filename=None)
+        #fixations.to_pickle(filename, ts_filter=ts_filter)
+        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, filename=None, suffix='Filtered')
+        self.exportCSV_Filtered(filepath=filepath, fixation_filter=fixation_filter, ts_filter=ts_filter)
+        #f_metrics = Fixations_Metrics(fixations)
+        #print(f_metrics.getAOIs_TotalFixationDuration(ts_filter=ts_filter))
+        #print(f_metrics.getAOIs_TTFF())
+        #print(f_metrics.getAOIs_FirstFixationDuration())
 
     def exportCSV_ExtendedRawData(self, filepath=None, filename=None, segment_id=None):
-        self.__exportData_CSV__(filepath, filename, 'eRaw', segment_id, ExtendedRawCSV)
+        self.__exportData_CSV__(ExtendedRawCSV, filepath, filename, 'eRaw', segment_id)
 
     def exportCSV_Fixations(self, fixation_filter, filepath=None, filename=None, ts_filter=None, segment_id=None):
         logging.info('Exporting fixations on %s' % filepath)
-        fixations = self.getFixations(fixation_filter, ts_filter, segment_id)
+        events = self.getFixations(fixation_filter, ts_filter, segment_id)
         (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, filename, 'Fixations')
-        fixations.exportCSV(filepath, filename, ts_filter=ts_filter)
-        return fixations
+        self.__exportData_CSV__(FixationsCSV, filepath, filename, 'Fixations', segment_id, events)
+
+    def exportCSV_Filtered(self, fixation_filter, filepath=None, filename=None, ts_filter=None, segment_id=None):
+        logging.info('Exporting fixations on %s' % filepath)
+        events = self.getFixations(fixation_filter, ts_filter, segment_id)
+        (filepath, filename) = self.__getFileParams__('csv', segment_id, filepath, filename, 'Filtered')
+        self.__exportData_CSV__(FilteredCSV, filepath, filename, 'Filtered', segment_id, events)
 
     def exportCSV_RawData(self, filepath=None, filename=None, segment_id=1):
-        self.__exportData_CSV__(filepath, filename, 'Raw', segment_id, RawCSV)
+        self.__exportData_CSV__(RawCSV, filepath, filename, 'Raw', segment_id)
 
     def exportVideoAndGaze(self, filepath=None, filename='output.avi', segment_id=1, aoi_models=[]):
         logging.info('Exporting video with mapped gaze in file %s in folder %s' % (filename, filepath))

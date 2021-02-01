@@ -23,6 +23,7 @@ import tobiiglasses.entities
 import tobiiglasses.utils
 from sortedcontainers import SortedList, SortedDict
 from tobiiglasses.livedata import *
+import tobiiglasses.events
 
 logging.basicConfig(format='[%(levelname)s]: %(message)s', level=logging.DEBUG)
 
@@ -293,11 +294,53 @@ class GazeData:
     def getVTS(self):
         return self.__vts__
 
-    def toDataFrame(self):
+    def importEvents(self, events):
+        self.__gazedata__[tobiiglasses.events.GazeEvents.GazeType] = GazeItem(tobiiglasses.events.GazeEvents.GazeType, np.dtype(object))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.Fixation_X] = GazeItem(tobiiglasses.events.GazeEvents.Fixation_X, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.Fixation_Y] = GazeItem(tobiiglasses.events.GazeEvents.Fixation_Y, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.EventIndex] = GazeItem(tobiiglasses.events.GazeEvents.EventIndex, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.EventDuration] = GazeItem(tobiiglasses.events.GazeEvents.EventDuration, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X] = GazeItem(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y] = GazeItem(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y, np.dtype('u4'))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.AOI] = GazeItem(tobiiglasses.events.GazeEvents.AOI, np.dtype(object))
+        self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Score] = GazeItem(tobiiglasses.events.GazeEvents.AOI_Score, np.dtype('f2'))
+
+        events = events.getEvents()
+        events_ts = events[GazeData.Timestamp].getData().values()
+
+        evt_idx = 0
+        evt_ts = 0
+        evt_duration = 0
+        for ts in self.__gazedata__[GazeData.Timestamp].getData().values():
+
+            if (events_ts[evt_idx] - ts) <= 10.0:
+                evt_ts = events_ts[evt_idx]
+                evt_duration = events[tobiiglasses.events.GazeEvents.EventDuration][evt_ts]
+                if events_ts[evt_idx] != events_ts[-1]:
+                    evt_idx+=1
+
+            if ts <= (evt_ts + evt_duration):
+                self.__gazedata__[tobiiglasses.events.GazeEvents.GazeType][ts] = events[tobiiglasses.events.GazeEvents.GazeType][evt_ts]
+                self.__gazedata__[tobiiglasses.events.GazeEvents.EventIndex][ts] = events[tobiiglasses.events.GazeEvents.EventIndex][evt_ts]
+                self.__gazedata__[tobiiglasses.events.GazeEvents.EventDuration][ts] = evt_duration
+                self.__gazedata__[tobiiglasses.events.GazeEvents.Fixation_X][ts] = events[tobiiglasses.events.GazeEvents.Fixation_X][evt_ts]
+                self.__gazedata__[tobiiglasses.events.GazeEvents.Fixation_Y][ts] = events[tobiiglasses.events.GazeEvents.Fixation_Y][evt_ts]
+                try:
+                    self.__gazedata__[tobiiglasses.events.GazeEvents.AOI][ts] = events[tobiiglasses.events.GazeEvents.AOI][evt_ts]
+                    self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Score][ts] = events[tobiiglasses.events.GazeEvents.AOI][evt_ts]
+                    self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X][ts] = events[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X][evt_ts]
+                    self.__gazedata__[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y][ts] = events[tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y][evt_ts]
+                except:
+                    pass
+
+
+    def toDataFrame(self, ts_filter=None):
         table = {}
         for label, data in self.__gazedata__.items():
             table[label] = pd.Series(data.getData(), dtype=object)
-        return pd.DataFrame(table)
+        if ts_filter is None:
+            return pd.DataFrame(table)
+        return ts_filter.getFilteredData(df)
 
     def to_pickle(self, filename):
         self.toDataFrame().to_pickle(filename)

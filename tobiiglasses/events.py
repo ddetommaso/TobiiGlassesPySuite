@@ -15,12 +15,11 @@
 
 import pandas as pd
 import numpy as np
-import tobiiglasses
 import logging
 import os
 import bisect
+import tobiiglasses.gazedata
 from sortedcontainers import SortedList, SortedDict
-from tobiiglasses.gazedata import GazeItem, GazeData
 from tobiiglasses.filters.df import TimestampFilter
 from tobiiglasses.exporter import FixationsCSV
 
@@ -42,11 +41,12 @@ class GazeEvents:
     Saccade_Start_Y = "Saccade Start Y"
     Saccade_End_X = "Saccade End X"
     Saccade_End_Y = "Saccade End Y"
-    InputFixationFilterX = GazeData.GazePixelX
-    InputFixationFilterY = GazeData.GazePixelY
+    InputFixationFilterX = "Gaze Pixel X"
+    InputFixationFilterY = "Gaze Pixel Y"
 
     def __init__(self):
-        self.__events__ = SortedDict({})
+        #self.__events__ = SortedDict({})
+        self.__events__ = {}
         self.__init_datatypes__()
         self.__fixation_index__ = 0
         self.__saccade_index__ = 0
@@ -59,28 +59,28 @@ class GazeEvents:
 
     def __getFilteredGazeData__(self, gazedata_df, ts_filter=None):
         if ts_filter is None:
-            ts_filter = TimestampFilter(list(gazedata_df[GazeData.Timestamp]))
+            ts_filter = TimestampFilter(list(gazedata_df[GazeEvents.Timestamp]))
         df, ts_list = ts_filter.getFilteredData(gazedata_df, self.__ts_processed__)
         self.__ts_processed__.extend(ts_list)
         return df, ts_list
 
     def __init_datatypes__(self):
-        self.__events__[GazeEvents.Timestamp] = GazeItem(GazeEvents.Timestamp, np.dtype('float'))
-        self.__events__[GazeEvents.LoggedEvents] = GazeItem(GazeEvents.LoggedEvents, np.dtype(object))
-        self.__events__[GazeEvents.JSONEvents] = GazeItem(GazeEvents.JSONEvents, np.dtype(object))
-        self.__events__[GazeEvents.GazeType] = GazeItem(GazeEvents.GazeType, np.dtype(object))
-        self.__events__[GazeEvents.Fixation_X] = GazeItem(GazeEvents.Fixation_X, np.dtype('u4'))
-        self.__events__[GazeEvents.Fixation_Y] = GazeItem(GazeEvents.Fixation_Y, np.dtype('u4'))
-        self.__events__[GazeEvents.EventIndex] = GazeItem(GazeEvents.EventIndex, np.dtype('u4'))
-        self.__events__[GazeEvents.EventDuration] = GazeItem(GazeEvents.EventDuration, np.dtype('u4'))
-        self.__events__[GazeEvents.AOI_Mapped_Fixation_X] = GazeItem(GazeEvents.AOI_Mapped_Fixation_X, np.dtype('u4'))
-        self.__events__[GazeEvents.AOI_Mapped_Fixation_Y] = GazeItem(GazeEvents.AOI_Mapped_Fixation_Y, np.dtype('u4'))
-        self.__events__[GazeEvents.AOI] = GazeItem(GazeEvents.AOI, np.dtype(object))
-        self.__events__[GazeEvents.AOI_Score] = GazeItem(GazeEvents.AOI_Score, np.dtype('f2'))
-        self.__events__[GazeEvents.Saccade_Start_X] = GazeItem(GazeEvents.Saccade_Start_X, np.dtype('f2'))
-        self.__events__[GazeEvents.Saccade_Start_Y] = GazeItem(GazeEvents.Saccade_Start_Y, np.dtype('f2'))
-        self.__events__[GazeEvents.Saccade_End_X] = GazeItem(GazeEvents.Saccade_End_X, np.dtype('f2'))
-        self.__events__[GazeEvents.Saccade_End_Y] = GazeItem(GazeEvents.Saccade_End_Y, np.dtype('f2'))
+        self.__events__[GazeEvents.Timestamp] = tobiiglasses.gazedata.GazeItem(GazeEvents.Timestamp, np.dtype('float'))
+        self.__events__[GazeEvents.LoggedEvents] = tobiiglasses.gazedata.GazeItem(GazeEvents.LoggedEvents, np.dtype(object))
+        self.__events__[GazeEvents.JSONEvents] = tobiiglasses.gazedata.GazeItem(GazeEvents.JSONEvents, np.dtype(object))
+        self.__events__[GazeEvents.GazeType] = tobiiglasses.gazedata.GazeItem(GazeEvents.GazeType, np.dtype(object))
+        self.__events__[GazeEvents.Fixation_X] = tobiiglasses.gazedata.GazeItem(GazeEvents.Fixation_X, np.dtype('u4'))
+        self.__events__[GazeEvents.Fixation_Y] = tobiiglasses.gazedata.GazeItem(GazeEvents.Fixation_Y, np.dtype('u4'))
+        self.__events__[GazeEvents.EventIndex] = tobiiglasses.gazedata.GazeItem(GazeEvents.EventIndex, np.dtype('u4'))
+        self.__events__[GazeEvents.EventDuration] = tobiiglasses.gazedata.GazeItem(GazeEvents.EventDuration, np.dtype('u4'))
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_X] = tobiiglasses.gazedata.GazeItem(GazeEvents.AOI_Mapped_Fixation_X, np.dtype('u4'))
+        self.__events__[GazeEvents.AOI_Mapped_Fixation_Y] = tobiiglasses.gazedata.GazeItem(GazeEvents.AOI_Mapped_Fixation_Y, np.dtype('u4'))
+        self.__events__[GazeEvents.AOI] = tobiiglasses.gazedata.GazeItem(GazeEvents.AOI, np.dtype(object))
+        self.__events__[GazeEvents.AOI_Score] = tobiiglasses.gazedata.GazeItem(GazeEvents.AOI_Score, np.dtype('f2'))
+        self.__events__[GazeEvents.Saccade_Start_X] = tobiiglasses.gazedata.GazeItem(GazeEvents.Saccade_Start_X, np.dtype('f2'))
+        self.__events__[GazeEvents.Saccade_Start_Y] = tobiiglasses.gazedata.GazeItem(GazeEvents.Saccade_Start_Y, np.dtype('f2'))
+        self.__events__[GazeEvents.Saccade_End_X] = tobiiglasses.gazedata.GazeItem(GazeEvents.Saccade_End_X, np.dtype('f2'))
+        self.__events__[GazeEvents.Saccade_End_Y] = tobiiglasses.gazedata.GazeItem(GazeEvents.Saccade_End_Y, np.dtype('f2'))
 
     def addFixation(self, ts, index, duration, fixation_x, fixation_y):
         self.__events__[GazeEvents.Timestamp][ts] = ts
@@ -127,6 +127,9 @@ class GazeEvents:
             y = pd.Series(df[GazeEvents.InputFixationFilterY])
             fixation_filter.setData(x,y)
             fixation_filter.filter(self)
+
+    def getEvents(self, ts_filter=None):
+        return self.__events__
 
     def getFixations(self, ts_filter=None):
         df = self.toDataFrame(ts_filter)

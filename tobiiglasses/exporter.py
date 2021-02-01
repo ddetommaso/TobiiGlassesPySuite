@@ -16,9 +16,8 @@
 import logging
 import os
 import pandas as pd
-import tobiiglasses as TG
-from tobiiglasses.gazedata import GazeData
-
+import tobiiglasses.gazedata
+import tobiiglasses.events
 
 
 class CSVFile(object):
@@ -32,6 +31,7 @@ class CSVFile(object):
         dest = os.path.join(self.__filepath__, self.__filename__)
         logging.info('Exporting data in %s' % dest)
         df.to_csv(dest, encoding='utf-8', header=True, columns=self.__headers__, index=False)
+        df.to_pickle(os.path.join(self.__filepath__, 'data.pickle'))
 
     def getHeaders(self):
         return self.__headers__
@@ -48,35 +48,35 @@ class RawCSV(CSVFile):
     def __init__(self, filepath, filename, gazedata):
         CSVFile.__init__(self, filepath, filename)
         self.__gazedata__ = gazedata
-        self.__headers__.append(GazeData.Timestamp)
-        self.__headers__.append(GazeData.Gidx)
-        self.__headers__.append(GazeData.LoggedEvents)
-        self.__headers__.append(GazeData.JSONEvents)
-        self.__headers__.append(GazeData.GazePositionX)
-        self.__headers__.append(GazeData.GazePositionY)
-        self.__headers__.append(GazeData.GazePixelX)
-        self.__headers__.append(GazeData.GazePixelY)
-        self.__headers__.append(GazeData.Gaze3DPositionX)
-        self.__headers__.append(GazeData.Gaze3DPositionY)
-        self.__headers__.append(GazeData.Gaze3DPositionZ)
-        self.__headers__.append(GazeData.Depth)
-        self.__headers__.append(GazeData.Vergence)
-        self.__headers__.append(GazeData.Version)
-        self.__headers__.append(GazeData.Tilt)
-        self.__headers__.append(GazeData.GazeDirectionX_Left)
-        self.__headers__.append(GazeData.GazeDirectionY_Left)
-        self.__headers__.append(GazeData.GazeDirectionZ_Left)
-        self.__headers__.append(GazeData.GazeDirectionX_Right)
-        self.__headers__.append(GazeData.GazeDirectionY_Right)
-        self.__headers__.append(GazeData.GazeDirectionZ_Right)
-        self.__headers__.append(GazeData.PupilCenterX_Left)
-        self.__headers__.append(GazeData.PupilCenterY_Left)
-        self.__headers__.append(GazeData.PupilCenterZ_Left)
-        self.__headers__.append(GazeData.PupilCenterX_Right)
-        self.__headers__.append(GazeData.PupilCenterY_Right)
-        self.__headers__.append(GazeData.PupilCenterZ_Right)
-        self.__headers__.append(GazeData.PupilDiameter_Left)
-        self.__headers__.append(GazeData.PupilDiameter_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Timestamp)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Gidx)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.LoggedEvents)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.JSONEvents)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazePositionX)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazePositionY)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazePixelX)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazePixelY)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Gaze3DPositionX)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Gaze3DPositionY)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Gaze3DPositionZ)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Depth)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Vergence)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Version)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.Tilt)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionX_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionY_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionZ_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionX_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionY_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.GazeDirectionZ_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterX_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterY_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterZ_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterX_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterY_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilCenterZ_Right)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilDiameter_Left)
+        self.__headers__.append(tobiiglasses.gazedata.GazeData.PupilDiameter_Right)
 
     def toCSV(self):
         self.__exportDataFrame__(self.__gazedata__.toDataFrame())
@@ -87,19 +87,38 @@ class ExtendedRawCSV(RawCSV):
         RawCSV.__init__(self, filepath, filename, gazedata)
         self.__headers__.extend(gazedata.getExpVarsHeaders())
 
+
+class FilteredCSV(RawCSV):
+
+    def __init__(self, filepath, filename, gazedata, events):
+        RawCSV.__init__(self, filepath, filename, gazedata)
+        self.__events__ = events
+        self.__headers__.append(tobiiglasses.events.GazeEvents.EventIndex)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.GazeType)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.Fixation_X)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.Fixation_Y)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.EventDuration)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Score)
+        self.__gazedata__.importEvents(self.__events__)
+
+
 class FixationsCSV(CSVFile):
 
     def __init__(self, filepath, filename, fixations_df):
         CSVFile.__init__(self, filepath, filename)
-        self.__headers__.append(TG.events.GazeEvents.Timestamp)
-        self.__headers__.append(TG.events.GazeEvents.EventIndex)
-        self.__headers__.append(TG.events.GazeEvents.Fixation_X)
-        self.__headers__.append(TG.events.GazeEvents.Fixation_Y)
-        self.__headers__.append(TG.events.GazeEvents.EventDuration)
-        self.__headers__.append(TG.events.GazeEvents.AOI_Mapped_Fixation_X)
-        self.__headers__.append(TG.events.GazeEvents.AOI_Mapped_Fixation_Y)
-        self.__headers__.append(TG.events.GazeEvents.AOI)
-        self.__headers__.append(TG.events.GazeEvents.AOI_Score)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.Timestamp)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.EventIndex)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.GazeType)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.Fixation_X)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.Fixation_Y)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.EventDuration)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_X)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Mapped_Fixation_Y)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI)
+        self.__headers__.append(tobiiglasses.events.GazeEvents.AOI_Score)
         self.__fixations_df__ = fixations_df
 
     def toCSV(self):

@@ -54,13 +54,13 @@ class Stats:
 
 
 class Fixations_Metrics:
-    def __init__(self, gaze_events):
-        self.__events__ = gaze_events
-        self.__fixations_df__ = gaze_events.getFixations()
+    def __init__(self, df):
+        self.__fixations_df__ = df
+        self.__ts_list__ = df[GazeEvents.Timestamp]
 
     def __filter__(self, ts_filter):
         if ts_filter is None:
-            return (self.__fixations_df__, self.__events__.getTimestamps())
+            return (self.__fixations_df__, self.__ts_list__)
         return ts_filter.getFilteredData(self.__fixations_df__)
 
     def getFixationsCount(self, ts_filter=None):
@@ -80,7 +80,7 @@ class Fixations_Metrics:
         return Stats(pd.to_numeric(df[GazeEvents.Fixation_X]))
 
     def getAOIs_TTFF(self, ts_onset=0):
-        ts_filter = BetweenTimestamps(t1=ts_onset, t2=self.__events__.getTimestamps()[-1])
+        ts_filter = BetweenTimestamps(t1=ts_onset, t2=self.__ts_list__.iloc[-1])
         df, ts_list = self.__filter__(ts_filter)
         aois = df.AOI.unique()
         aois_ttff = {}
@@ -93,7 +93,7 @@ class Fixations_Metrics:
         return aois_ttff
 
     def getAOIs_FirstFixationDuration(self, ts_onset=0):
-        ts_filter = BetweenTimestamps(t1=ts_onset, t2=self.__events__.getTimestamps()[-1])
+        ts_filter = BetweenTimestamps(t1=ts_onset, t2=self.__ts_list__.iloc[-1])
         df, ts_list = self.__filter__(ts_filter)
         aois = df.AOI.unique()
         aois_ffd = {}
@@ -113,7 +113,26 @@ class Fixations_Metrics:
         for item in aois:
             aoi_sum = df.loc[df.AOI == item, GazeEvents.EventDuration].sum()
             if aoi_sum > 0:
-                aois_tfd[item] = (aoi_sum*100.0)/tot
+                aois_tfd[item] = aoi_sum
             else:
                 aois_tfd[item] = 0
+        return aois_tfd
+
+    def getAOIs_FixationCount(self, ts_filter=None):
+        df, ts_list = self.__filter__(ts_filter)
+        aois = df.AOI.unique()
+        aois_tfd = {}
+        for item in aois:
+            aoi_count = len(df.loc[df.AOI == item])
+            aois_tfd[item] = aoi_count
+        return aois_tfd
+
+    def getAOIs_FixationDurationStats(self, ts_filter=None):
+        df, ts_list = self.__filter__(ts_filter)
+        aois = df.AOI.unique()
+        aois_tfd = {}
+        for item in aois:
+            aoi_df = df.loc[df.AOI == item]
+            aoi_stats = Stats(pd.to_numeric(aoi_df[GazeEvents.EventDuration]))
+            aois_tfd[item] = aoi_stats
         return aois_tfd

@@ -15,8 +15,9 @@
 
 import pandas as pd
 import math
+import tobiiglasses.gazedata
 from sortedcontainers import SortedList, SortedDict
-from tobiiglasses.gazedata import GazeData
+
 
 class FixationsFilter:
 
@@ -69,4 +70,4 @@ class DataFrameFilter(object):
             columns = list(df.columns.values)
         res = df.filter(items=columns)
         df_filtered = res[self.__filter_condition__(res, tslist_to_exclude, columns)]
-        return (df_filtered, df_filtered[GazeData.Timestamp].values)
+        return (df_filtered, df_filtered[tobiiglasses.gazedata.GazeData.Timestamp].values)
